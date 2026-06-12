@@ -9,7 +9,7 @@ export function terrainAt(m: MapData, x: number, y: number): Terrain {
 
 export function walkable(m: MapData, x: number, y: number): boolean {
   const t = terrainAt(m, x, y);
-  return t !== "wall" && t !== "water";
+  return t !== "wall" && t !== "water" && t !== "boulder";
 }
 
 /**

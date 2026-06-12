@@ -54,9 +54,9 @@ export function setHeroVariant(v: HeroVariant) {
 export function getHeroVariant(): HeroVariant {
   return heroVariant;
 }
-/** Portrait art for the chosen character (start flow + battles + map). */
+/** Portrait art for the chosen character (start flow + map fallback). */
 export function heroPortraitSrc(v: HeroVariant = heroVariant): string {
-  return `/ui/char_${v}.png`;
+  return `/ui/hero/${v}_front.png`;
 }
 
 export const SPRITE_SIZE = 16; // native pixels; renderer scales with nearest-neighbor

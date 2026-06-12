@@ -24,6 +24,7 @@ import type {
   GameEvent,
   GameMode,
   MapData,
+  MapTheme,
   Mob,
   Phase,
   Question,
@@ -114,6 +115,16 @@ export class Game {
     return this.cfg.modes[this.mode].time_limit;
   }
 
+  /** Visual theme of the current round: L1 Nature, L2 Water, L3 pending assets → Nature. */
+  get theme(): MapTheme {
+    return this.round === 2 ? "water" : "nature";
+  }
+
+  /** Transition-card label for the current round. */
+  get levelLabel(): string {
+    return `LEVEL ${this.round}: ${this.theme === "water" ? "WATER" : "NATURE"}`;
+  }
+
   get p(): number {
     const k =
       this.mode === "exhibit"
@@ -124,6 +135,7 @@ export class Game {
 
   get questionTimer(): number {
     if (!this.battle) return 0;
+    if (this.battle.stage === "choice") return this.cfg.mapgen.question_timer_sec; // frozen until FIGHT
     return Math.max(
       0,
       this.cfg.mapgen.question_timer_sec - (this.elapsed - this.battle.questionStartedAt)
@@ -186,7 +198,7 @@ export class Game {
     }
 
     if (this.phase === "battle") {
-      if (this.battle && this.questionTimer <= 0) {
+      if (this.battle && this.battle.stage === "question" && this.questionTimer <= 0) {
         this.events.push({ t: this.elapsed, kind: "answer", msg: "Timeout — counted wrong" });
         this.resolveAnswer(false, true);
       }
@@ -410,6 +422,7 @@ export class Game {
 
     this.battle = {
       mobId: mob.id,
+      stage: "choice",
       question: q,
       shuffledChoices: choices,
       correctIndex,
@@ -433,6 +446,7 @@ export class Game {
   /** Player (or bot) picks a choice index. */
   answer(i: number) {
     if (!this.battle) return;
+    if (this.battle.stage === "choice") this.fightChosen(); // implicit FIGHT (headless path)
     const correct = i === this.battle.correctIndex;
     this.resolveAnswer(correct, false);
   }
@@ -472,11 +486,12 @@ export class Game {
         this.replan("Mob defeated — recomputing route", true); // §IX trigger 6
         return;
       }
-      // next round vs multi-hit mob
+      // next round vs multi-hit mob — back to the FIGHT/RUN choice
       const q = this.bank.draw(tierDifficulty(mob.tier));
       const { choices, correctIndex } = this.bank.shuffleChoices(q);
       this.battle = {
         ...this.battle,
+        stage: "choice",
         question: q,
         shuffledChoices: choices,
         correctIndex,
@@ -505,6 +520,7 @@ export class Game {
       const fight = eFight(this.cfg, mob.tier, this.p, this.hp, this.timeLimit);
       this.battle = {
         ...this.battle,
+        stage: "choice",
         question: q,
         shuffledChoices: choices,
         correctIndex,
@@ -547,10 +563,12 @@ export class Game {
     this.replan("Retreated — rerouting around the mob"); // §IX trigger 6
   }
 
+  /** FIGHT pressed: the quiz round begins and the question timer starts (§III). */
   fightChosen() {
-    if (!this.battle) return;
+    if (!this.battle || this.battle.stage !== "choice") return;
     if (this.battle.recommendation === "FIGHT") this.followed++;
     else this.defied++;
+    this.battle = { ...this.battle, stage: "question", questionStartedAt: this.elapsed };
   }
 
   // ---------- end states ----------

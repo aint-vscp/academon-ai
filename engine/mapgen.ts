@@ -68,6 +68,27 @@ function carveBase(w: number, h: number, rng: Rng): Terrain[] {
       for (let x = gx; x < gx + gw; x++)
         if (t[y * w + x] === "path") t[y * w + x] = "grass";
   }
+  // bush thickets — walkable but the costliest soft terrain (§II)
+  const thickets = randInt(rng, 2, 4);
+  for (let i = 0; i < thickets; i++) {
+    const bw2 = randInt(rng, 2, 3);
+    const bh2 = randInt(rng, 1, 2);
+    const bx2 = randInt(rng, 1, w - bw2 - 1);
+    const by2 = randInt(rng, 1, h - bh2 - 1);
+    for (let y = by2; y < by2 + bh2; y++)
+      for (let x = bx2; x < bx2 + bw2; x++)
+        if (t[y * w + x] === "path" || t[y * w + x] === "grass")
+          t[y * w + x] = "bush";
+  }
+  // scattered boulders — single-tile hard blockers on any soft terrain
+  const boulders = randInt(rng, 3, 6);
+  for (let i = 0; i < boulders; i++) {
+    const bx3 = randInt(rng, 2, w - 3);
+    const by3 = randInt(rng, 2, h - 3);
+    const cur = t[by3 * w + bx3];
+    if (cur === "path" || cur === "grass" || cur === "mud" || cur === "bush")
+      t[by3 * w + bx3] = "boulder";
+  }
   // mud strips
   const muds = randInt(rng, 2, 4);
   for (let i = 0; i < muds; i++) {

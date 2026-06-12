@@ -5,7 +5,7 @@
     "exhibit": { "time_limit": 90,  "deterministic": true,  "bank": "trivia-easy" }
   },
   "costs": {
-    "path": 1, "grass": 3, "mud": 4,
+    "path": 1, "grass": 3, "mud": 4, "bush": 5,
     "move_energy": 1, "attack_energy": 6, "round_time": 1, "retreat_time": 6
   },
   "mobs": {

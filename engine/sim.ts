@@ -65,23 +65,26 @@ export function simulate(opts: SimOptions): RunResult {
     simTime += dt;
 
     if (game.phase === "battle" && game.battle) {
-      // bot thinks for ~2s then answers
-      const thinkUntil = game.battle.questionStartedAt + 2;
-      if (game.elapsed >= thinkUntil) {
+      if (game.battle.stage === "choice") {
         const naive = game.agentKind === "naive";
         // naive agent always fights; adaptive bot follows the recommendation
         if (!naive && game.battle.recommendation === "RETREAT" && !game.battle.unavoidable) {
           game.retreat();
           continue;
         }
-        game.fightChosen();
-        const acc = botAccuracy(opts.profile, game.answered, game.battle.question.subject);
-        const roll = botRng();
-        if (roll < acc) {
-          game.answer(game.battle.correctIndex);
-        } else {
-          const wrongIdx = (game.battle.correctIndex + 1) % game.battle.shuffledChoices.length;
-          game.answer(wrongIdx);
+        game.fightChosen(); // FIGHT → quiz round starts
+      } else {
+        // bot thinks for ~2s then answers
+        const thinkUntil = game.battle.questionStartedAt + 2;
+        if (game.elapsed >= thinkUntil) {
+          const acc = botAccuracy(opts.profile, game.answered, game.battle.question.subject);
+          const roll = botRng();
+          if (roll < acc) {
+            game.answer(game.battle.correctIndex);
+          } else {
+            const wrongIdx = (game.battle.correctIndex + 1) % game.battle.shuffledChoices.length;
+            game.answer(wrongIdx);
+          }
         }
       }
     }

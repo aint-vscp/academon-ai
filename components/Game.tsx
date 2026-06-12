@@ -12,7 +12,8 @@ import configJson from "@/data/config.json";
 import questionsJson from "@/data/questions.json";
 import GameCanvas from "./GameCanvas";
 import Hud from "./Hud";
-import BattleScene from "./BattleScene";
+import BattleScene, { type BattleApi } from "./BattleScene";
+import IrisTransition from "./IrisTransition";
 import StartFlow, { type StartChoice } from "./StartFlow";
 import { preloadSprites, setHeroVariant } from "@/lib/sprites";
 
@@ -23,6 +24,26 @@ interface LeaderEntry {
   name: string;
   score: number;
   goal: string;
+}
+
+/** Post-game taglines by share of questions answered correctly. */
+function sayingFor(correct: number, answered: number): string {
+  const r = answered > 0 ? correct / answered : 0;
+  if (r >= 0.75) return "SANA ALL ACADEMIC WEAPON! KEEP UP THE GOOD WORK, BES!";
+  if (r >= 0.45) return "ARAL PA MUNA. MALAYO NA PERO MALAYO PA.";
+  return "BAWI KA NALANG NEXT SCHOOL YEAR, MAG FILE KA NA NG LOA!";
+}
+
+function fmtElapsed(sec: number): string {
+  const m = Math.floor(sec / 60);
+  const s = Math.floor(sec % 60);
+  return `${m}:${String(s).padStart(2, "0")} MINS`;
+}
+
+interface TransSpec {
+  label: string;
+  color: string;
+  mid: () => void;
 }
 
 function loadBoard(): LeaderEntry[] {
@@ -60,42 +81,82 @@ export default function GameRoot() {
   const stageRef = useRef<HTMLDivElement>(null);
   const roundClearAt = useRef(0);
   const [choice, setChoice] = useState<StartChoice | null>(null);
-  const answerApiRef = useRef<((i: number) => void) | null>(null);
+  const battleApiRef = useRef<BattleApi | null>(null);
+  const [trans, setTrans] = useState<TransSpec | null>(null);
+  const transRef = useRef(false);
+  const [showStats, setShowStats] = useState(false);
 
-  // mode from ?mode=exhibit
-  useEffect(() => {
-    const q = new URLSearchParams(window.location.search);
-    if (q.get("mode") === "exhibit") setMode("exhibit");
-    setBoard(loadBoard());
-    preloadSprites();
+  const startTrans = useCallback((label: string, color: string, mid: () => void) => {
+    transRef.current = true;
+    setTrans({ label, color, mid });
   }, []);
 
-  const newGame = useCallback((m: GameMode, c: StartChoice) => {
-    setChoice(c);
-    setHeroVariant(c.hero);
-    const bank = banks[cfg.modes[m].bank] ?? Object.values(banks)[0];
-    // anti-repeat rule: never the same goal quadrant twice in a row (§II.2)
-    const prevQuad = Number(localStorage.getItem("academon-last-quadrant") ?? "-1");
-    const game = new Game(cfg, bank, {
-      mode: m,
-      seed: nextSeed(m),
-      algo: "astar",
-      avoidQuadrant: prevQuad,
-    });
-    localStorage.setItem("academon-last-quadrant", String(quadrantOf(game.map, game.map.goal)));
-    gameRef.current = game;
-    setSavedScore(false);
-    setInitials(c.name.slice(0, 3).toUpperCase());
-    toastsSince.current = 0;
-    setToasts([]);
-    game.start();
-    force((v) => v + 1);
-  }, []);
+  // mode from ?mode=exhibit · ?autostart=isko|iska boots straight into a run (dev/booth)
+  const newGame = useCallback(
+    (m: GameMode, c: StartChoice) => {
+      setChoice(c);
+      setHeroVariant(c.hero);
+      const bank = banks[cfg.modes[m].bank] ?? Object.values(banks)[0];
+      // anti-repeat rule: never the same goal quadrant twice in a row (§II.2)
+      const prevQuad = Number(localStorage.getItem("academon-last-quadrant") ?? "-1");
+      const game = new Game(cfg, bank, {
+        mode: m,
+        seed: nextSeed(m),
+        algo: "astar",
+        avoidQuadrant: prevQuad,
+      });
+      localStorage.setItem("academon-last-quadrant", String(quadrantOf(game.map, game.map.goal)));
+      gameRef.current = game;
+      setSavedScore(false);
+      setShowStats(false);
+      setInitials(c.name.slice(0, 3).toUpperCase());
+      toastsSince.current = 0;
+      setToasts([]);
+      // iris in over the title, reveal Level 1 behind the curtain
+      startTrans(game.levelLabel, "#ffffff", () => {
+        game.start();
+        force((v) => v + 1);
+      });
+      force((v) => v + 1);
+    },
+    [startTrans]
+  );
+
+  /** Round-clear → iris to the next level (fires once per roundclear). */
+  const fireRoundTransition = useCallback(
+    (game: Game) => {
+      if (transRef.current || game.phase !== "roundclear") return;
+      roundClearAt.current = 0;
+      const nr = game.round + 1;
+      startTrans(
+        `LEVEL ${nr}: ${nr === 2 ? "WATER" : "NATURE"}`,
+        nr === 2 ? "#46e0d4" : "#ffffff",
+        () => {
+          game.nextRound();
+          force((v) => v + 1);
+        }
+      );
+    },
+    [startTrans]
+  );
 
   const backToTitle = useCallback(() => {
     gameRef.current = null;
     force((v) => v + 1);
   }, []);
+
+  // mode from ?mode=exhibit · ?autostart=isko|iska boots straight into a run (dev/booth)
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search);
+    const m: GameMode = q.get("mode") === "exhibit" ? "exhibit" : "class";
+    if (m === "exhibit") setMode("exhibit");
+    setBoard(loadBoard());
+    preloadSprites();
+    const auto = q.get("autostart");
+    if ((auto === "isko" || auto === "iska") && !gameRef.current) {
+      newGame(m, { hero: auto, name: auto === "isko" ? "Isko" : "Iska" });
+    }
+  }, [newGame]);
 
   const toggleFullscreen = useCallback(() => {
     const el = stageRef.current ?? document.documentElement;
@@ -114,7 +175,8 @@ export default function GameRoot() {
       const dt = Math.min(0.1, (now - last) / 1000);
       last = now;
       const game = gameRef.current;
-      if (game && (game.phase === "running" || game.phase === "battle")) {
+      const frozen = transRef.current; // world paused behind the iris curtain
+      if (game && !frozen && (game.phase === "running" || game.phase === "battle")) {
         game.tick(dt);
         const fresh = game.toasts(toastsSince.current);
         if (fresh.length) {
@@ -123,14 +185,11 @@ export default function GameRoot() {
         }
         setToasts((t) => t.filter((x) => game.elapsed - x.t < 4));
       }
-      // auto-advance the round-clear banner after 2.5s
-      if (game && game.phase === "roundclear") {
+      // show the round-clear banner briefly, then iris into the next level
+      if (game && game.phase === "roundclear" && !frozen) {
         if (!roundClearAt.current) roundClearAt.current = now;
-        if (now - roundClearAt.current > 2500) {
-          roundClearAt.current = 0;
-          game.nextRound();
-        }
-      } else {
+        if (now - roundClearAt.current > 1500) fireRoundTransition(game);
+      } else if (game && game.phase !== "roundclear") {
         roundClearAt.current = 0;
       }
       force((v) => v + 1);
@@ -138,38 +197,46 @@ export default function GameRoot() {
     };
     raf = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(raf);
-  }, []);
+  }, [fireRoundTransition]);
 
   // keyboard
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const game = gameRef.current;
+      if (transRef.current) return; // ignore input mid-transition
+      if (game && game.phase === "battle" && game.battle) {
+        const api = battleApiRef.current;
+        if (game.battle.stage === "choice") {
+          if (e.key.toLowerCase() === "f" || e.key === "Enter") {
+            if (api) api.fight();
+            else game.fightChosen();
+            force((v) => v + 1);
+            return; // F is FIGHT here, not fullscreen
+          }
+          if (e.key.toLowerCase() === "r") {
+            if (api) api.run();
+            else game.retreat();
+            force((v) => v + 1);
+            return;
+          }
+        } else if (e.key >= "1" && e.key <= "4") {
+          const i = Number(e.key) - 1;
+          if (i < game.battle.shuffledChoices.length) {
+            // route through the battle scene so the animation plays
+            if (api) api.answer(i);
+            else game.answer(i);
+            force((v) => v + 1);
+          }
+          return;
+        }
+      }
       if (e.key.toLowerCase() === "f") {
         toggleFullscreen();
         return;
       }
       if (!game) return;
-      if (game.phase === "battle" && game.battle) {
-        if (e.key >= "1" && e.key <= "4") {
-          const i = Number(e.key) - 1;
-          if (i < game.battle.shuffledChoices.length) {
-            // route through the battle scene so the animation plays
-            if (answerApiRef.current) answerApiRef.current(i);
-            else {
-              game.fightChosen();
-              game.answer(i);
-            }
-            force((v) => v + 1);
-          }
-        } else if (e.key.toLowerCase() === "r") {
-          game.retreat();
-          force((v) => v + 1);
-        }
-      } else if (game.phase === "roundclear") {
-        if (e.key === "Enter" || e.key === " ") {
-          roundClearAt.current = 0;
-          game.nextRound();
-        }
+      if (game.phase === "roundclear") {
+        if (e.key === "Enter" || e.key === " ") fireRoundTransition(game);
       } else if (game.phase === "won" || game.phase === "lost") {
         if (e.key.toLowerCase() === "r" && choice) newGame(game.mode, choice);
       }
@@ -177,7 +244,7 @@ export default function GameRoot() {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [newGame, toggleFullscreen, choice]);
+  }, [newGame, toggleFullscreen, choice, fireRoundTransition]);
 
   const game = gameRef.current;
   const inGame =
@@ -187,6 +254,8 @@ export default function GameRoot() {
       game.phase === "roundclear" ||
       game.phase === "won" ||
       game.phase === "lost");
+  // the congrats mockup is a clean full screen — hide the chrome behind it
+  const inCongrats = !!game && game.phase === "won" && !showStats;
 
   const submitScore = () => {
     if (!game || savedScore) return;
@@ -203,8 +272,8 @@ export default function GameRoot() {
 
   return (
     <div className="app-shell">
-      {/* compact header — hidden during the start flow for the full mockup look */}
-      {inGame && (
+      {/* compact header — hidden during the start flow / congrats for the mockup look */}
+      {inGame && !inCongrats && (
         <div className="app-header">
           <div>
             <span className="title" style={{ fontSize: 14 }}>
@@ -230,7 +299,7 @@ export default function GameRoot() {
         </div>
       )}
 
-      {inGame && <Hud game={game!} />}
+      {inGame && !inCongrats && <Hud game={game!} />}
 
       {/* the stage fills the rest of the viewport */}
       <div ref={stageRef} className="game-stage scanlines">
@@ -258,13 +327,17 @@ export default function GameRoot() {
           />
         )}
 
-        {/* battle */}
+        {/* battle — full-screen Pokémon-style scene */}
         {game && game.phase === "battle" && game.battle && (
           <BattleScene
             game={game}
-            answerApiRef={answerApiRef}
-            onAnswer={(i) => {
+            apiRef={battleApiRef}
+            heroLabel={`${choice?.name ?? (choice?.hero === "iska" ? "Iska" : "Isko")} 3-1N`}
+            onFight={() => {
               game.fightChosen();
+              force((v) => v + 1);
+            }}
+            onAnswer={(i) => {
               game.answer(i);
               force((v) => v + 1);
             }}
@@ -275,8 +348,8 @@ export default function GameRoot() {
           />
         )}
 
-        {/* round clear banner */}
-        {game && game.phase === "roundclear" && (
+        {/* round clear banner (auto-irises into the next level) */}
+        {game && game.phase === "roundclear" && !trans && (
           <div className="overlay">
             <div className="pixel-panel" style={{ width: 420, textAlign: "center" }}>
               <div className="title" style={{ fontSize: 18, color: "#66bb6a" }}>
@@ -286,13 +359,12 @@ export default function GameRoot() {
                 Reached <b>{game.map.goalName}</b> · +{cfg.scoring.w_round} score
               </p>
               <p className="lead">
-                HP {Math.ceil(game.hp)} and energy {Math.ceil(game.energy)} carry over. New campus,
-                new goal, fresh clock.
+                HP {Math.ceil(game.hp)} and energy {Math.ceil(game.energy)} carry over.
               </p>
               <button
                 className="pixel-btn primary"
                 style={{ marginTop: 8 }}
-                onClick={() => game.nextRound()}
+                onClick={() => fireRoundTransition(game)}
               >
                 ▶ Round {game.round + 1} (Enter)
               </button>
@@ -300,8 +372,30 @@ export default function GameRoot() {
           </div>
         )}
 
-        {/* end screens */}
-        {game && (game.phase === "won" || game.phase === "lost") && (
+        {/* congratulations screen (mockup) — arrow leads to the stats panel */}
+        {game && game.phase === "won" && !showStats && (
+          <div className="congrats-screen">
+            <div className="congrats-title">CONGRATULATIONS !!!</div>
+            <div className="congrats-saying">{sayingFor(game.correct, game.answered)}</div>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/ui/trophy.png" alt="trophy" className="congrats-trophy" />
+            <div className="congrats-stats">
+              <div>TIME ELAPSED:</div>
+              <div className="congrats-val">{fmtElapsed(game.elapsed)}</div>
+              <div style={{ marginTop: 14 }}>NO. OF CORRECT QUESTIONS:</div>
+              <div className="congrats-val gold">
+                {game.correct}/{game.answered}
+              </div>
+            </div>
+            <button className="congrats-next" onClick={() => setShowStats(true)} aria-label="Continue">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/ui/arrow_next.png" alt="" />
+            </button>
+          </div>
+        )}
+
+        {/* stats / leaderboard panel (after congrats, or on defeat) */}
+        {game && (game.phase === "lost" || (game.phase === "won" && showStats)) && (
           <div className="overlay">
             <div className="pixel-panel" style={{ width: 500, textAlign: "center" }}>
               {game.phase === "won" ? (
@@ -319,6 +413,9 @@ export default function GameRoot() {
                   <div className="lead">
                     cleared {game.roundsCleared}/{cfg.session.rounds} rounds
                   </div>
+                  <div className="subtitle" style={{ margin: "6px 0", color: "#8d93a8" }}>
+                    {sayingFor(game.correct, game.answered)}
+                  </div>
                 </>
               )}
               <div className="lead">
@@ -327,7 +424,7 @@ export default function GameRoot() {
                 {game.replans}
               </div>
               <div className="lead">
-                followed AI {game.followed} · defied {game.defied}
+                followed AI {game.followed} · defied {game.defied} · time {fmtElapsed(game.elapsed)}
               </div>
 
               {game.phase === "won" && !savedScore && (
@@ -349,6 +446,10 @@ export default function GameRoot() {
                 <ol className="leaderboard" style={{ textAlign: "left", marginTop: 12 }}>
                   {board.slice(0, 5).map((e, i) => (
                     <li key={i}>
+                      {i === 0 && (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src="/ui/crown.png" alt="" className="crown-img" />
+                      )}
                       <b>{e.name}</b> — {e.score} ({e.goal})
                     </li>
                   ))}
@@ -368,6 +469,19 @@ export default function GameRoot() {
               </div>
             </div>
           </div>
+        )}
+
+        {/* circle iris wipe between rounds */}
+        {trans && (
+          <IrisTransition
+            label={trans.label}
+            color={trans.color}
+            onMid={trans.mid}
+            onDone={() => {
+              transRef.current = false;
+              setTrans(null);
+            }}
+          />
         )}
       </div>
 

@@ -36,6 +36,8 @@ export function terrainEnergy(cfg: Config, t: string): number {
       return cfg.costs.grass;
     case "mud":
       return cfg.costs.mud;
+    case "bush":
+      return cfg.costs.bush;
     default:
       return Number.POSITIVE_INFINITY;
   }

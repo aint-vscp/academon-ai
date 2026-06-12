@@ -1,7 +1,18 @@
 // AcadéMon AI engine — pure TypeScript, zero DOM/React imports.
 // Shared types for grid, mobs, items, game state and events.
 
-export type Terrain = "path" | "grass" | "mud" | "wall" | "water" | "ledge";
+export type Terrain =
+  | "path"
+  | "grass"
+  | "mud"
+  | "bush" // walkable thicket — highest soft-obstacle energy cost
+  | "wall"
+  | "water" // blocking pond (nature) / deep water (water theme)
+  | "boulder" // blocking scatter rock
+  | "ledge";
+
+/** Visual theme per round; terrain semantics stay identical across themes. */
+export type MapTheme = "nature" | "water";
 
 export type MobTier = "slime" | "goblin" | "wraith";
 
@@ -71,6 +82,8 @@ export type FailReason =
 
 export interface BattleState {
   mobId: number;
+  /** Pokémon-style flow: "choice" = What will you do? (FIGHT/RUN); "question" = quiz round. */
+  stage: "choice" | "question";
   question: Question;
   shuffledChoices: string[];
   correctIndex: number;
@@ -139,6 +152,7 @@ export interface Config {
     path: number;
     grass: number;
     mud: number;
+    bush: number;
     move_energy: number;
     attack_energy: number;
     round_time: number;

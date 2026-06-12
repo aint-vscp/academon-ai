@@ -54,14 +54,17 @@ export default function StartFlow({
           </div>
         </div>
         <div className="menu-stack">
-          <button className="stone-btn" onClick={() => setStep("character")}>
-            START
+          <button className="img-btn" onClick={() => setStep("character")}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/ui/btn_start.png" alt="START" />
           </button>
-          <button className="stone-btn" onClick={() => setStep("options")}>
-            OPTIONS
+          <button className="img-btn" onClick={() => setStep("options")}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/ui/btn_options.png" alt="OPTIONS" />
           </button>
-          <a className="stone-btn" href="/eval">
-            EVALUATION LAB
+          <a className="img-btn" href="/eval">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/ui/btn_eval.png" alt="EVALUATION LAB" />
           </a>
         </div>
       </div>

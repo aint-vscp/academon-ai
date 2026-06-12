@@ -5,34 +5,37 @@
 
 import { useEffect, useRef } from "react";
 import type { Game } from "@/engine/game";
-import { terrainAt } from "@/engine/grid";
 import { getHeroVariant, getSprite, type SpriteName } from "@/lib/sprites";
+import { drawTerrainTile, preloadTiles } from "@/lib/tiles";
+import { getHeroFrame, preloadHeroFrames, type Facing } from "@/lib/heroFrames";
 
 export const TILE = 32;
 
-const terrainSprite: Record<string, SpriteName> = {
-  path: "terrain_path",
-  grass: "terrain_grass",
-  mud: "terrain_mud",
-  water: "terrain_water",
-  wall: "terrain_wall",
-  ledge: "terrain_ledge",
-};
+/** Last facing per game instance so the hero keeps orientation when idle. */
+const lastFacing = new WeakMap<Game, Facing>();
 
-function heroPixel(game: Game): { x: number; y: number; dx: number; walking: boolean } {
+function heroPixel(game: Game): {
+  x: number;
+  y: number;
+  dx: number;
+  dy: number;
+  walking: boolean;
+} {
   const cur = game.pos;
   const next = game.route[game.routeIdx + 1];
   let fx = cur.x;
   let fy = cur.y;
   let dx = 0;
+  let dy = 0;
   let walking = false;
   if (game.phase === "running" && next) {
     fx = cur.x + (next.x - cur.x) * game.moveProgress;
     fy = cur.y + (next.y - cur.y) * game.moveProgress;
     dx = next.x - cur.x;
+    dy = next.y - cur.y;
     walking = true;
   }
-  return { x: fx * TILE, y: fy * TILE, dx, walking };
+  return { x: fx * TILE, y: fy * TILE, dx, dy, walking };
 }
 
 export function drawGame(ctx: CanvasRenderingContext2D, game: Game, showGhost: boolean) {
@@ -58,15 +61,14 @@ export function drawGame(ctx: CanvasRenderingContext2D, game: Game, showGhost: b
   ctx.save();
   ctx.translate(-Math.round(camX), -Math.round(camY));
 
-  // terrain
+  // terrain — themed PNG tilesets (L1 Nature / L2 Water) with path autotiling
   const x0 = Math.max(0, Math.floor(camX / TILE));
   const y0 = Math.max(0, Math.floor(camY / TILE));
   const x1 = Math.min(m.w - 1, Math.ceil((camX + VIEW_W) / TILE));
   const y1 = Math.min(m.h - 1, Math.ceil((camY + VIEW_H) / TILE));
   for (let y = y0; y <= y1; y++) {
     for (let x = x0; x <= x1; x++) {
-      const t = terrainAt(m, x, y);
-      ctx.drawImage(getSprite(terrainSprite[t]), x * TILE, y * TILE, TILE, TILE);
+      drawTerrainTile(ctx, m, game.theme, x, y, x * TILE, y * TILE, TILE);
     }
   }
 
@@ -140,28 +142,27 @@ export function drawGame(ctx: CanvasRenderingContext2D, game: Game, showGhost: b
     }
   }
 
-  // hero (Isko / Iska) — walking animation: bob + sway + direction flip
-  const heroSprite = getSprite(`hero_${getHeroVariant()}` as SpriteName);
-  const natW = "naturalWidth" in heroSprite ? heroSprite.naturalWidth || 16 : heroSprite.width;
-  const natH = "naturalHeight" in heroSprite ? heroSprite.naturalHeight || 16 : heroSprite.height;
-  const drawH = TILE * 1.35;
-  const drawW = Math.min(TILE * 1.1, (drawH * natW) / natH);
+  // hero (Isko / Iska) — 4-direction walk cycle from the frame registry
+  let facing = lastFacing.get(game) ?? "front";
+  if (hp.walking) {
+    facing = hp.dy < 0 ? "back" : hp.dy > 0 ? "front" : hp.dx < 0 ? "left" : "right";
+    lastFacing.set(game, facing);
+  }
   const stepPhase = game.steps + game.moveProgress;
-  const bob = hp.walking ? Math.abs(Math.sin(stepPhase * Math.PI)) * 4 : 0;
-  const sway = hp.walking ? Math.sin(stepPhase * Math.PI * 2) * 0.08 : 0;
+  const frame = getHeroFrame(getHeroVariant(), facing, hp.walking, stepPhase);
+  const natW = "naturalWidth" in frame ? frame.naturalWidth || 16 : frame.width;
+  const natH = "naturalHeight" in frame ? frame.naturalHeight || 16 : frame.height;
+  const drawH = TILE * 1.4;
+  const drawW = Math.min(TILE * 1.15, (drawH * natW) / natH);
+  const bob = hp.walking ? Math.abs(Math.sin(stepPhase * Math.PI)) * 2 : 0;
   const cxp = hp.x + TILE / 2;
-  const cyp = hp.y + TILE - drawH / 2;
-  ctx.save();
-  ctx.translate(cxp, cyp + drawH / 2);
-  if (hp.dx < 0) ctx.scale(-1, 1); // face the way you walk
-  ctx.rotate(sway);
+  const footY = hp.y + TILE - 2;
   // tiny shadow
   ctx.fillStyle = "rgba(0,0,0,0.3)";
   ctx.beginPath();
-  ctx.ellipse(0, drawH / 2 - 2, drawW / 2.6, 3.5, 0, 0, Math.PI * 2);
+  ctx.ellipse(cxp, footY, drawW / 2.4, 3.5, 0, 0, Math.PI * 2);
   ctx.fill();
-  ctx.drawImage(heroSprite, -drawW / 2, -drawH / 2 - bob, drawW, drawH);
-  ctx.restore();
+  ctx.drawImage(frame, cxp - drawW / 2, footY - drawH - bob, drawW, drawH);
 
   ctx.restore();
 }
@@ -178,6 +179,9 @@ export default function GameCanvas({
 
   // resize the canvas's internal resolution to fill its container (fullscreen-ready)
   useEffect(() => {
+    preloadTiles();
+    preloadHeroFrames("isko");
+    preloadHeroFrames("iska");
     const wrap = wrapRef.current;
     const cv = canvasRef.current;
     if (!wrap || !cv) return;
