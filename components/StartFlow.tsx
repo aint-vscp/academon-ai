@@ -137,12 +137,14 @@ export default function StartFlow({
         </div>
         <div style={{ textAlign: "center", marginTop: 18 }}>
           <button
-            className="stone-btn small"
+            className="img-btn confirm"
             disabled={!hero}
             style={{ opacity: hero ? 1 : 0.4 }}
             onClick={() => hero && setStep("name")}
+            aria-label="Confirm"
           >
-            CONFIRM
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/ui/btn_confirm.png" alt="CONFIRM" />
           </button>
         </div>
       </div>
@@ -178,12 +180,14 @@ export default function StartFlow({
           />
           <div style={{ marginTop: 18 }}>
             <button
-              className="stone-btn small"
+              className="img-btn confirm"
               onClick={() =>
                 onStart({ hero: hero!, name: name.trim() || (hero === "isko" ? "Isko" : "Iska") })
               }
+              aria-label="Confirm"
             >
-              CONFIRM
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/ui/btn_confirm.png" alt="CONFIRM" />
             </button>
           </div>
         </div>

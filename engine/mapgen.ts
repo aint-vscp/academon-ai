@@ -32,7 +32,8 @@ export function quadrantOf(m: { w: number; h: number }, v: Vec): number {
 }
 
 function carveBase(w: number, h: number, rng: Rng): Terrain[] {
-  const t: Terrain[] = new Array(w * h).fill("path");
+  // Pokémon-style overworld: a GRASS field crossed by single-tile path lanes.
+  const t: Terrain[] = new Array(w * h).fill("grass");
   // border walls
   for (let x = 0; x < w; x++) {
     t[x] = "wall";
@@ -42,33 +43,73 @@ function carveBase(w: number, h: number, rng: Rng): Terrain[] {
     t[y * w] = "wall";
     t[y * w + w - 1] = "wall";
   }
-  // building blobs (walls)
+  // single-wide path lanes: L-shaped corridors wandering out from the center
+  const carve = (x: number, y: number) => {
+    if (x > 0 && x < w - 1 && y > 0 && y < h - 1) t[y * w + x] = "path";
+  };
+  const lane = (x1: number, y1: number, x2: number, y2: number) => {
+    let x = x1;
+    let y = y1;
+    if (rng() < 0.5) {
+      for (; x !== x2; x += Math.sign(x2 - x)) carve(x, y);
+      for (; y !== y2; y += Math.sign(y2 - y)) carve(x, y);
+    } else {
+      for (; y !== y2; y += Math.sign(y2 - y)) carve(x, y);
+      for (; x !== x2; x += Math.sign(x2 - x)) carve(x, y);
+    }
+    carve(x2, y2);
+  };
+  const cx = Math.floor(w / 2);
+  const cy = Math.floor(h / 2);
+  let lx0 = cx;
+  let ly0 = cy;
+  const lanes = randInt(rng, 4, 5);
+  for (let i = 0; i < lanes; i++) {
+    const tx = randInt(rng, 2, w - 3);
+    const ty = randInt(rng, 2, h - 3);
+    lane(lx0, ly0, tx, ty);
+    // half the time chain from the endpoint (wandering), half restart at center (star)
+    if (rng() < 0.5) {
+      lx0 = tx;
+      ly0 = ty;
+    } else {
+      lx0 = cx;
+      ly0 = cy;
+    }
+  }
+  // building blobs (walls) — only where they don't stomp a lane
   const blobs = randInt(rng, 5, 7);
   for (let i = 0; i < blobs; i++) {
-    const bw = randInt(rng, 2, 4);
-    const bh = randInt(rng, 2, 3);
-    const bx = randInt(rng, 2, w - bw - 2);
-    const by = randInt(rng, 2, h - bh - 2);
-    for (let y = by; y < by + bh; y++)
-      for (let x = bx; x < bx + bw; x++) t[y * w + x] = "wall";
+    for (let tries = 0; tries < 12; tries++) {
+      const bw = randInt(rng, 2, 4);
+      const bh = randInt(rng, 2, 3);
+      const bx = randInt(rng, 2, w - bw - 2);
+      const by = randInt(rng, 2, h - bh - 2);
+      let clear = true;
+      for (let y = by; y < by + bh && clear; y++)
+        for (let x = bx; x < bx + bw && clear; x++)
+          if (t[y * w + x] === "path") clear = false;
+      if (!clear) continue;
+      for (let y = by; y < by + bh; y++)
+        for (let x = bx; x < bx + bw; x++) t[y * w + x] = "wall";
+      break;
+    }
   }
-  // a pond
-  const px = randInt(rng, 3, w - 5);
-  const py = randInt(rng, 3, h - 4);
-  for (let y = py; y < Math.min(h - 2, py + 2); y++)
-    for (let x = px; x < Math.min(w - 2, px + 3); x++) t[y * w + x] = "water";
-  // grass fields
-  const patches = randInt(rng, 4, 6);
-  for (let i = 0; i < patches; i++) {
-    const gw = randInt(rng, 3, 6);
-    const gh = randInt(rng, 2, 4);
-    const gx = randInt(rng, 1, w - gw - 1);
-    const gy = randInt(rng, 1, h - gh - 1);
-    for (let y = gy; y < gy + gh; y++)
-      for (let x = gx; x < gx + gw; x++)
-        if (t[y * w + x] === "path") t[y * w + x] = "grass";
+  // a pond — off the lanes too
+  for (let tries = 0; tries < 12; tries++) {
+    const px = randInt(rng, 3, w - 5);
+    const py = randInt(rng, 3, h - 4);
+    let clear = true;
+    for (let y = py; y < Math.min(h - 2, py + 2) && clear; y++)
+      for (let x = px; x < Math.min(w - 2, px + 3) && clear; x++)
+        if (t[y * w + x] === "path") clear = false;
+    if (!clear) continue;
+    for (let y = py; y < Math.min(h - 2, py + 2); y++)
+      for (let x = px; x < Math.min(w - 2, px + 3); x++) t[y * w + x] = "water";
+    break;
   }
-  // bush thickets — walkable but the costliest soft terrain (§II)
+  // bush thickets — walkable but the costliest soft terrain (§II); grass only,
+  // so the single lanes stay clean
   const thickets = randInt(rng, 2, 4);
   for (let i = 0; i < thickets; i++) {
     const bw2 = randInt(rng, 2, 3);
@@ -77,19 +118,16 @@ function carveBase(w: number, h: number, rng: Rng): Terrain[] {
     const by2 = randInt(rng, 1, h - bh2 - 1);
     for (let y = by2; y < by2 + bh2; y++)
       for (let x = bx2; x < bx2 + bw2; x++)
-        if (t[y * w + x] === "path" || t[y * w + x] === "grass")
-          t[y * w + x] = "bush";
+        if (t[y * w + x] === "grass") t[y * w + x] = "bush";
   }
-  // scattered boulders — single-tile hard blockers on any soft terrain
+  // scattered boulders — single-tile hard blockers, kept off the lanes
   const boulders = randInt(rng, 3, 6);
   for (let i = 0; i < boulders; i++) {
     const bx3 = randInt(rng, 2, w - 3);
     const by3 = randInt(rng, 2, h - 3);
-    const cur = t[by3 * w + bx3];
-    if (cur === "path" || cur === "grass" || cur === "mud" || cur === "bush")
-      t[by3 * w + bx3] = "boulder";
+    if (t[by3 * w + bx3] === "grass") t[by3 * w + bx3] = "boulder";
   }
-  // mud strips
+  // mud strips — grass only
   const muds = randInt(rng, 2, 4);
   for (let i = 0; i < muds; i++) {
     const mw = randInt(rng, 2, 4);
@@ -98,15 +136,14 @@ function carveBase(w: number, h: number, rng: Rng): Terrain[] {
     const my = randInt(rng, 1, h - mh - 1);
     for (let y = my; y < my + mh; y++)
       for (let x = mx; x < mx + mw; x++)
-        if (t[y * w + x] === "path" || t[y * w + x] === "grass")
-          t[y * w + x] = "mud";
+        if (t[y * w + x] === "grass") t[y * w + x] = "mud";
   }
-  // a couple of one-way ledges on path tiles
+  // a couple of one-way ledges on grass tiles
   const ledges = randInt(rng, 1, 3);
   for (let i = 0; i < ledges; i++) {
     const lx = randInt(rng, 2, w - 3);
     const ly = randInt(rng, 2, h - 3);
-    if (t[ly * w + lx] === "path") t[ly * w + lx] = "ledge";
+    if (t[ly * w + lx] === "grass") t[ly * w + lx] = "ledge";
   }
   return t;
 }

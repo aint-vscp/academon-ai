@@ -54,21 +54,26 @@ export default function BattleScene({
   const prevStage = useRef(b.stage);
   const prevMob = useRef(b.mobId);
 
-  // paint the mob sprite (registry: PNG drop-in or procedural fallback)
+  // paint the mob sprite (registry: PNG drop-in or procedural fallback).
+  // animKey is a dep: the canvas remounts on every answer (CSS anim restart),
+  // so the fresh element must be repainted or the mob vanishes mid-battle.
   useEffect(() => {
     const cv = mobRef.current;
     if (!cv || !mob) return;
     const g = cv.getContext("2d")!;
     g.imageSmoothingEnabled = false;
     g.clearRect(0, 0, cv.width, cv.height);
-    g.drawImage(
-      getSprite(mob.tier === "slime" ? "mob_slime" : mob.tier === "goblin" ? "mob_goblin" : "mob_wraith"),
-      0,
-      0,
-      cv.width,
-      cv.height
+    const spr = getSprite(
+      mob.tier === "slime" ? "mob_slime" : mob.tier === "goblin" ? "mob_goblin" : "mob_wraith"
     );
-  }, [mob, mob?.tier]);
+    // letterbox to preserve the sprite's aspect ratio
+    const sw = spr.width || 16;
+    const sh = spr.height || 16;
+    const k = Math.min(cv.width / sw, cv.height / sh);
+    const dw = sw * k;
+    const dh = sh * k;
+    g.drawImage(spr, (cv.width - dw) / 2, cv.height - dh, dw, dh);
+  }, [mob, mob?.tier, animKey]);
 
   // new mob → reset the per-battle question counter
   useEffect(() => {
@@ -181,8 +186,8 @@ export default function BattleScene({
       <canvas
         key={`m${animKey}`}
         ref={mobRef}
-        width={16}
-        height={16}
+        width={128}
+        height={128}
         className={`battle-mob-sprite ${mobAnim}`}
       />
 

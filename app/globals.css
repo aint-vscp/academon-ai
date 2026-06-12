@@ -694,6 +694,15 @@ input.pixel-input {
   filter: drop-shadow(0 3px 0 rgba(0, 0, 0, 0.3));
 }
 
+.img-btn.confirm img {
+  width: clamp(150px, 16vw, 210px);
+}
+
+.img-btn:disabled {
+  cursor: default;
+  transform: none;
+}
+
 /* stone-tablet buttons from the mockup */
 .stone-btn {
   font-family: inherit;

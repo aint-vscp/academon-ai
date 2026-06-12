@@ -14,6 +14,26 @@ export const TILE = 32;
 /** Last facing per game instance so the hero keeps orientation when idle. */
 const lastFacing = new WeakMap<Game, Facing>();
 
+/** Aspect-preserving drawImage into a box (high-res PNGs aren't square). */
+function drawFit(
+  ctx: CanvasRenderingContext2D,
+  spr: HTMLCanvasElement | HTMLImageElement,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  anchor: "center" | "bottom"
+) {
+  const sw = spr.width || 16;
+  const sh = spr.height || 16;
+  const k = Math.min(w / sw, h / sh);
+  const dw = sw * k;
+  const dh = sh * k;
+  const dx = x + (w - dw) / 2;
+  const dy = anchor === "bottom" ? y + h - dh : y + (h - dh) / 2;
+  ctx.drawImage(spr, dx, dy, dw, dh);
+}
+
 function heroPixel(game: Game): {
   x: number;
   y: number;
@@ -123,7 +143,7 @@ export function drawGame(ctx: CanvasRenderingContext2D, game: Game, showGhost: b
     if (it.taken) continue;
     const s: SpriteName =
       it.kind === "medkit" ? "item_medkit" : it.kind === "energydrink" ? "item_energydrink" : "item_timecharm";
-    ctx.drawImage(getSprite(s), it.pos.x * TILE + 4, it.pos.y * TILE + 4, TILE - 8, TILE - 8);
+    drawFit(ctx, getSprite(s), it.pos.x * TILE + 4, it.pos.y * TILE + 4, TILE - 8, TILE - 8, "center");
   }
 
   // mobs
@@ -131,7 +151,7 @@ export function drawGame(ctx: CanvasRenderingContext2D, game: Game, showGhost: b
     if (mob.defeated) continue;
     const s: SpriteName =
       mob.tier === "slime" ? "mob_slime" : mob.tier === "goblin" ? "mob_goblin" : "mob_wraith";
-    ctx.drawImage(getSprite(s), mob.pos.x * TILE + 2, mob.pos.y * TILE + 2, TILE - 4, TILE - 4);
+    drawFit(ctx, getSprite(s), mob.pos.x * TILE + 2, mob.pos.y * TILE + 2, TILE - 4, TILE - 4, "bottom");
     if (mob.gatekeeper) {
       ctx.fillStyle = "#ffd54f";
       ctx.fillText("!", mob.pos.x * TILE + TILE / 2, mob.pos.y * TILE);
