@@ -60,7 +60,7 @@ export type BotProfile =
 
 export type AgentKind = "naive" | "adaptive";
 
-export type Phase = "idle" | "running" | "battle" | "won" | "lost";
+export type Phase = "idle" | "running" | "battle" | "roundclear" | "won" | "lost";
 
 export type FailReason =
   | "OUT OF HP"
@@ -112,6 +112,7 @@ export interface StatSample {
 export interface RunResult {
   won: boolean;
   failReason: FailReason;
+  roundsCleared: number;
   steps: number;
   fights: number;
   correct: number;
@@ -157,6 +158,7 @@ export interface Config {
     toast_cooldown_sec: number;
   };
   ui: { camera: string; tween_ms: number };
+  session: { rounds: number };
   mapgen: {
     spawn: string;
     min_goal_dist_pct: number;
@@ -170,6 +172,7 @@ export interface Config {
   };
   scoring: {
     w_goal: number;
+    w_round: number;
     w_correct: number;
     w_time: number;
     w_energy: number;

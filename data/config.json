@@ -25,7 +25,8 @@
     "hysteresis_hp": 5,
     "toast_cooldown_sec": 5
   },
-  "ui": { "camera": "centered-hero", "tween_ms": 240 },
+  "ui": { "camera": "centered-hero", "tween_ms": 480 },
+  "session": { "rounds": 3 },
   "mapgen": {
     "spawn": "center",
     "min_goal_dist_pct": 0.6,
@@ -39,6 +40,7 @@
   },
   "scoring": {
     "w_goal": 1000,
+    "w_round": 500,
     "w_correct": 50,
     "w_time": 2,
     "w_energy": 1,

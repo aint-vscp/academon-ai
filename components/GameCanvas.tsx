@@ -9,8 +9,6 @@ import { terrainAt } from "@/engine/grid";
 import { getSprite, type SpriteName } from "@/lib/sprites";
 
 export const TILE = 32;
-export const VIEW_W = 720;
-export const VIEW_H = 460;
 
 const terrainSprite: Record<string, SpriteName> = {
   path: "terrain_path",
@@ -35,22 +33,30 @@ function heroPixel(game: Game): { x: number; y: number } {
 
 export function drawGame(ctx: CanvasRenderingContext2D, game: Game, showGhost: boolean) {
   const m = game.map;
+  const VIEW_W = ctx.canvas.width;
+  const VIEW_H = ctx.canvas.height;
   ctx.imageSmoothingEnabled = false;
   ctx.fillStyle = "#090b14";
   ctx.fillRect(0, 0, VIEW_W, VIEW_H);
 
-  // centered-hero camera, clamped at map edges
+  // centered-hero camera, clamped at map edges (centers small maps)
   const hp = heroPixel(game);
   const worldW = m.w * TILE;
   const worldH = m.h * TILE;
-  const camX = Math.max(0, Math.min(worldW - VIEW_W, hp.x + TILE / 2 - VIEW_W / 2));
-  const camY = Math.max(0, Math.min(worldH - VIEW_H, hp.y + TILE / 2 - VIEW_H / 2));
+  const camX =
+    worldW <= VIEW_W
+      ? (worldW - VIEW_W) / 2
+      : Math.max(0, Math.min(worldW - VIEW_W, hp.x + TILE / 2 - VIEW_W / 2));
+  const camY =
+    worldH <= VIEW_H
+      ? (worldH - VIEW_H) / 2
+      : Math.max(0, Math.min(worldH - VIEW_H, hp.y + TILE / 2 - VIEW_H / 2));
   ctx.save();
   ctx.translate(-Math.round(camX), -Math.round(camY));
 
   // terrain
-  const x0 = Math.floor(camX / TILE);
-  const y0 = Math.floor(camY / TILE);
+  const x0 = Math.max(0, Math.floor(camX / TILE));
+  const y0 = Math.max(0, Math.floor(camY / TILE));
   const x1 = Math.min(m.w - 1, Math.ceil((camX + VIEW_W) / TILE));
   const y1 = Math.min(m.h - 1, Math.ceil((camY + VIEW_H) / TILE));
   for (let y = y0; y <= y1; y++) {
@@ -144,6 +150,25 @@ export default function GameCanvas({
   showGhostRef: React.MutableRefObject<boolean>;
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const wrapRef = useRef<HTMLDivElement>(null);
+
+  // resize the canvas's internal resolution to fill its container (fullscreen-ready)
+  useEffect(() => {
+    const wrap = wrapRef.current;
+    const cv = canvasRef.current;
+    if (!wrap || !cv) return;
+    const fit = () => {
+      const r = wrap.getBoundingClientRect();
+      const w = Math.max(320, Math.floor(r.width));
+      const h = Math.max(240, Math.floor(r.height));
+      if (cv.width !== w) cv.width = w;
+      if (cv.height !== h) cv.height = h;
+    };
+    fit();
+    const ro = new ResizeObserver(fit);
+    ro.observe(wrap);
+    return () => ro.disconnect();
+  }, []);
 
   useEffect(() => {
     let raf = 0;
@@ -160,5 +185,9 @@ export default function GameCanvas({
     return () => cancelAnimationFrame(raf);
   }, [gameRef, showGhostRef]);
 
-  return <canvas ref={canvasRef} width={VIEW_W} height={VIEW_H} />;
+  return (
+    <div ref={wrapRef} style={{ position: "absolute", inset: 0 }}>
+      <canvas ref={canvasRef} style={{ display: "block", width: "100%", height: "100%" }} />
+    </div>
+  );
 }

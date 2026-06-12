@@ -84,6 +84,7 @@ export default function EvalPage() {
                 <th>Profile</th>
                 <th>Agent</th>
                 <th>Survival</th>
+                <th>avg Rounds</th>
                 <th>avg HP</th>
                 <th>avg Energy</th>
                 <th>avg Time left</th>
@@ -104,6 +105,7 @@ export default function EvalPage() {
                   <td>
                     <b>{pct(r.survival)}</b>
                   </td>
+                  <td>{r.avgRounds.toFixed(1)}</td>
                   <td>{r.avgHp.toFixed(0)}</td>
                   <td>{r.avgEnergy.toFixed(0)}</td>
                   <td>{r.avgTimeLeft.toFixed(0)}s</td>

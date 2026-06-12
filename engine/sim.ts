@@ -48,10 +48,19 @@ export function simulate(opts: SimOptions): RunResult {
   game.start();
 
   const dt = 0.1;
-  const maxSeconds = opts.maxSeconds ?? opts.cfg.modes[opts.mode].time_limit + 30;
+  const maxSeconds =
+    opts.maxSeconds ??
+    opts.cfg.session.rounds * (opts.cfg.modes[opts.mode].time_limit + 30);
   let simTime = 0;
 
-  while ((game.phase === "running" || game.phase === "battle") && simTime < maxSeconds) {
+  while (
+    (game.phase === "running" || game.phase === "battle" || game.phase === "roundclear") &&
+    simTime < maxSeconds
+  ) {
+    if (game.phase === "roundclear") {
+      game.nextRound();
+      continue;
+    }
     game.tick(dt);
     simTime += dt;
 
@@ -81,6 +90,7 @@ export function simulate(opts: SimOptions): RunResult {
   return {
     won: game.phase === "won",
     failReason: game.failReason,
+    roundsCleared: game.roundsCleared,
     steps: game.steps,
     fights: game.fights,
     correct: game.correct,
@@ -100,6 +110,7 @@ export interface BatchSummary {
   profile: BotProfile;
   runs: number;
   survival: number; // 0..1
+  avgRounds: number;
   avgHp: number;
   avgEnergy: number;
   avgTimeLeft: number;
@@ -127,6 +138,7 @@ export function batch(
     profile,
     runs: n,
     survival: results.filter((r) => r.won).length / n,
+    avgRounds: mean((r) => r.roundsCleared),
     avgHp: mean((r) => r.hp),
     avgEnergy: mean((r) => r.energy),
     avgTimeLeft: mean((r) => r.timeLeft),

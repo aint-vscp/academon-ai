@@ -9,7 +9,7 @@ export default function Hud({ game }: { game: Game }) {
   const sec = Math.floor(Math.max(0, game.timeLeft) % 60);
 
   return (
-    <div className="pixel-panel" style={{ marginBottom: 10 }}>
+    <div className="pixel-panel hud-panel">
       <div className="hud-grid">
         <div>
           <div className="hud-label">

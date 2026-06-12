@@ -26,11 +26,11 @@ for (const profile of PROFILES) {
     console.log(
       `${profile.padEnd(13)} ${agent.padEnd(9)} survival ${(r.survival * 100)
         .toFixed(0)
-        .padStart(3)}%  hp ${r.avgHp.toFixed(0).padStart(3)}  energy ${r.avgEnergy
+        .padStart(3)}%  rounds ${r.avgRounds.toFixed(1)}  hp ${r.avgHp
         .toFixed(0)
-        .padStart(3)}  time ${r.avgTimeLeft.toFixed(0).padStart(3)}s  fights ${r.avgFights.toFixed(
-        1
-      )}  replans ${r.avgReplans.toFixed(1)}`
+        .padStart(3)}  energy ${r.avgEnergy.toFixed(0).padStart(3)}  time ${r.avgTimeLeft
+        .toFixed(0)
+        .padStart(3)}s  fights ${r.avgFights.toFixed(1)}  replans ${r.avgReplans.toFixed(1)}`
     );
   }
 }
@@ -45,12 +45,12 @@ fs.writeFileSync(
 );
 
 const csv = [
-  "profile,agent,runs,survival,avg_hp,avg_energy,avg_time_left,avg_fights,avg_replans",
+  "profile,agent,runs,survival,avg_rounds,avg_hp,avg_energy,avg_time_left,avg_fights,avg_replans",
   ...rows.map(
     (r) =>
-      `${r.profile},${r.agent},${r.runs},${r.survival.toFixed(3)},${r.avgHp.toFixed(1)},${r.avgEnergy.toFixed(
+      `${r.profile},${r.agent},${r.runs},${r.survival.toFixed(3)},${r.avgRounds.toFixed(2)},${r.avgHp.toFixed(
         1
-      )},${r.avgTimeLeft.toFixed(1)},${r.avgFights.toFixed(2)},${r.avgReplans.toFixed(2)}`
+      )},${r.avgEnergy.toFixed(1)},${r.avgTimeLeft.toFixed(1)},${r.avgFights.toFixed(2)},${r.avgReplans.toFixed(2)}`
   ),
 ].join("\n");
 fs.writeFileSync("eval-results.csv", csv);

@@ -3,7 +3,7 @@
 
 import { accuracy, bandFor, eFight, eRetreat, kappaT, type Band } from "./economy";
 import { itemAt, manhattan, mobAt, sameVec, terrainAt } from "./grid";
-import { generateMap } from "./mapgen";
+import { generateMap, quadrantOf } from "./mapgen";
 import { QuestionBank, tierDifficulty } from "./quiz";
 import { mulberry32, type Rng } from "./rng";
 import {
@@ -54,6 +54,10 @@ export class Game {
   energy: number;
   timeLeft: number;
   elapsed = 0;
+  /** Multi-round session: each round is a fresh map; HP/energy carry over. */
+  round = 1;
+  roundsCleared = 0;
+  private baseSeed: number;
 
   pos: Vec;
   /** 0..1 tween progress toward route[routeIdx+1]. */
@@ -94,6 +98,7 @@ export class Game {
     this.algo = opts.algo ?? "astar";
     this.agentKind = opts.agentKind ?? "adaptive";
     this.rng = mulberry32(opts.seed ^ 0x9e3779b9);
+    this.baseSeed = opts.seed;
     this.map = generateMap(cfg, opts.seed, opts.mode, opts.avoidQuadrant ?? -1);
     this.bank = new QuestionBank(questions, this.rng);
     this.hp = cfg.resources.hp_max;
@@ -551,9 +556,32 @@ export class Game {
   // ---------- end states ----------
 
   private win() {
+    this.roundsCleared++;
+    this.sample(false);
+    if (this.round < this.cfg.session.rounds) {
+      this.phase = "roundclear";
+      this.events.push({ t: this.elapsed, kind: "win", msg: `Round ${this.round}: ${this.map.goalName}` });
+      return;
+    }
     this.phase = "won";
     this.events.push({ t: this.elapsed, kind: "win", msg: this.map.goalName });
-    this.sample(false);
+  }
+
+  /** Advance to the next round: fresh map (anti-repeat goal), fresh clock; HP/energy carry over. */
+  nextRound() {
+    if (this.phase !== "roundclear") return;
+    this.round++;
+    const avoid = quadrantOf(this.map, this.map.goal);
+    this.map = generateMap(this.cfg, this.baseSeed + this.round * 9973, this.mode, avoid);
+    this.pos = { ...this.map.spawn };
+    this.route = [];
+    this.routeIdx = 0;
+    this.moveProgress = 0;
+    this.battle = null;
+    this.timeLeft = this.cfg.modes[this.mode].time_limit; // fresh round clock
+    this.detourItemId = null;
+    this.phase = "running";
+    this.replan(`Round ${this.round} — heading to ${this.map.goalName}`);
   }
 
   private gameOver(reason: Exclude<FailReason, null>) {
@@ -569,6 +597,7 @@ export class Game {
       0,
       Math.round(
         (this.phase === "won" ? s.w_goal : 0) +
+          s.w_round * this.roundsCleared +
           s.w_correct * this.correct +
           s.w_time * this.timeLeft +
           s.w_energy * this.energy +
@@ -581,9 +610,9 @@ export class Game {
   get grade(): "S" | "A" | "B" | "C" | "F" {
     if (this.phase !== "won") return "F";
     const sc = this.score;
-    if (sc >= 1500) return "S";
-    if (sc >= 1300) return "A";
-    if (sc >= 1100) return "B";
+    if (sc >= 2900) return "S";
+    if (sc >= 2600) return "A";
+    if (sc >= 2300) return "B";
     return "C";
   }
 

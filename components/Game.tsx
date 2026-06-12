@@ -1,7 +1,8 @@
 "use client";
 
-// Game orchestrator: owns the engine instance, the RAF tick loop,
-// keyboard input (1-4 answer, R retreat/restart, G ghost path), overlays.
+// Game orchestrator: full-viewport app shell, engine instance + RAF tick loop,
+// keyboard input (1-4 answer, R retreat/restart, G ghost, F fullscreen),
+// 3-round sessions, overlays. Eval Lab link lives ONLY on the start screen.
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Game } from "@/engine/game";
@@ -9,7 +10,7 @@ import { quadrantOf } from "@/engine/mapgen";
 import type { Config, GameMode, Question } from "@/engine/types";
 import configJson from "@/data/config.json";
 import questionsJson from "@/data/questions.json";
-import GameCanvas, { VIEW_H, VIEW_W } from "./GameCanvas";
+import GameCanvas from "./GameCanvas";
 import Hud from "./Hud";
 import BattleScene from "./BattleScene";
 import { preloadSprites } from "@/lib/sprites";
@@ -55,6 +56,8 @@ export default function GameRoot() {
   const [savedScore, setSavedScore] = useState(false);
   const toastsSince = useRef(0);
   const [toasts, setToasts] = useState<{ t: number; msg: string }[]>([]);
+  const stageRef = useRef<HTMLDivElement>(null);
+  const roundClearAt = useRef(0);
 
   // mode from ?mode=exhibit
   useEffect(() => {
@@ -64,28 +67,34 @@ export default function GameRoot() {
     preloadSprites();
   }, []);
 
-  const newGame = useCallback(
-    (m: GameMode) => {
-      const bank = banks[cfg.modes[m].bank] ?? Object.values(banks)[0];
-      // anti-repeat rule: never the same goal quadrant twice in a row (§II.2)
-      const prevQuad = Number(localStorage.getItem("academon-last-quadrant") ?? "-1");
-      const game = new Game(cfg, bank, {
-        mode: m,
-        seed: nextSeed(m),
-        algo: "astar",
-        avoidQuadrant: prevQuad,
-      });
-      localStorage.setItem("academon-last-quadrant", String(quadrantOf(game.map, game.map.goal)));
-      gameRef.current = game;
-      setSavedScore(false);
-      setInitials("");
-      toastsSince.current = 0;
-      setToasts([]);
-      game.start();
-      force((v) => v + 1);
-    },
-    []
-  );
+  const newGame = useCallback((m: GameMode) => {
+    const bank = banks[cfg.modes[m].bank] ?? Object.values(banks)[0];
+    // anti-repeat rule: never the same goal quadrant twice in a row (§II.2)
+    const prevQuad = Number(localStorage.getItem("academon-last-quadrant") ?? "-1");
+    const game = new Game(cfg, bank, {
+      mode: m,
+      seed: nextSeed(m),
+      algo: "astar",
+      avoidQuadrant: prevQuad,
+    });
+    localStorage.setItem("academon-last-quadrant", String(quadrantOf(game.map, game.map.goal)));
+    gameRef.current = game;
+    setSavedScore(false);
+    setInitials("");
+    toastsSince.current = 0;
+    setToasts([]);
+    game.start();
+    force((v) => v + 1);
+  }, []);
+
+  const toggleFullscreen = useCallback(() => {
+    const el = stageRef.current ?? document.documentElement;
+    if (!document.fullscreenElement) {
+      el.requestFullscreen?.().catch(() => {});
+    } else {
+      document.exitFullscreen?.();
+    }
+  }, []);
 
   // main loop
   useEffect(() => {
@@ -97,13 +106,22 @@ export default function GameRoot() {
       const game = gameRef.current;
       if (game && (game.phase === "running" || game.phase === "battle")) {
         game.tick(dt);
-        // surface new toasts
         const fresh = game.toasts(toastsSince.current);
         if (fresh.length) {
           toastsSince.current = fresh[fresh.length - 1].t;
           setToasts((t) => [...t.slice(-2), ...fresh.map((e) => ({ t: e.t, msg: e.msg }))]);
         }
         setToasts((t) => t.filter((x) => game.elapsed - x.t < 4));
+      }
+      // auto-advance the round-clear banner after 2.5s
+      if (game && game.phase === "roundclear") {
+        if (!roundClearAt.current) roundClearAt.current = now;
+        if (now - roundClearAt.current > 2500) {
+          roundClearAt.current = 0;
+          game.nextRound();
+        }
+      } else {
+        roundClearAt.current = 0;
       }
       force((v) => v + 1);
       raf = requestAnimationFrame(loop);
@@ -116,6 +134,10 @@ export default function GameRoot() {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const game = gameRef.current;
+      if (e.key.toLowerCase() === "f") {
+        toggleFullscreen();
+        return;
+      }
       if (!game) return;
       if (game.phase === "battle" && game.battle) {
         if (e.key >= "1" && e.key <= "4") {
@@ -129,6 +151,11 @@ export default function GameRoot() {
           game.retreat();
           force((v) => v + 1);
         }
+      } else if (game.phase === "roundclear") {
+        if (e.key === "Enter" || e.key === " ") {
+          roundClearAt.current = 0;
+          game.nextRound();
+        }
       } else if (game.phase === "won" || game.phase === "lost") {
         if (e.key.toLowerCase() === "r") newGame(game.mode);
       }
@@ -136,9 +163,16 @@ export default function GameRoot() {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [newGame]);
+  }, [newGame, toggleFullscreen]);
 
   const game = gameRef.current;
+  const inGame =
+    game &&
+    (game.phase === "running" ||
+      game.phase === "battle" ||
+      game.phase === "roundclear" ||
+      game.phase === "won" ||
+      game.phase === "lost");
 
   const submitScore = () => {
     if (!game || savedScore) return;
@@ -154,27 +188,35 @@ export default function GameRoot() {
   };
 
   return (
-    <div className="wrap">
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 10 }}>
+    <div className="app-shell">
+      {/* compact header */}
+      <div className="app-header">
         <div>
-          <div className="title">ACADÉMON AI</div>
-          <div className="subtitle">Gotta Pass &rsquo;Em All · Group 2 — Intro to AI · {mode.toUpperCase()} MODE</div>
+          <span className="title" style={{ fontSize: 14 }}>
+            ACADÉMON AI
+          </span>
+          <span className="subtitle" style={{ marginLeft: 10 }}>
+            Gotta Pass &rsquo;Em All · {mode.toUpperCase()}
+          </span>
         </div>
-        <div style={{ display: "flex", gap: 8 }}>
-          <a href="/eval" className="chip" style={{ textDecoration: "none" }}>
-            EVAL LAB →
-          </a>
+        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+          {inGame && (
+            <span className="chip">
+              ROUND <b>{game!.round}/{cfg.session.rounds}</b>
+            </span>
+          )}
+          <button className="pixel-btn" style={{ padding: "4px 8px", fontSize: 8 }} onClick={toggleFullscreen}>
+            ⛶ Fullscreen (F)
+          </button>
         </div>
       </div>
 
-      {game && (game.phase === "running" || game.phase === "battle" || game.phase === "won" || game.phase === "lost") && (
-        <Hud game={game} />
-      )}
+      {inGame && <Hud game={game!} />}
 
-      <div className="game-stage scanlines" style={{ width: VIEW_W, height: VIEW_H }}>
+      {/* the stage fills the rest of the viewport */}
+      <div ref={stageRef} className="game-stage scanlines">
         <GameCanvas gameRef={gameRef} showGhostRef={showGhostRef} />
 
-        {/* toasts */}
         <div className="toasts">
           {toasts.map((t, i) => (
             <div className="toast" key={`${t.t}-${i}`}>
@@ -183,10 +225,10 @@ export default function GameRoot() {
           ))}
         </div>
 
-        {/* start screen */}
+        {/* start screen — the ONLY place that links to the Eval Lab */}
         {(!game || game.phase === "idle") && (
           <div className="overlay">
-            <div className="pixel-panel" style={{ width: 460, textAlign: "center" }}>
+            <div className="pixel-panel" style={{ width: 480, textAlign: "center" }}>
               <div className="title" style={{ fontSize: 16 }}>
                 ACADÉMON AI
               </div>
@@ -195,7 +237,8 @@ export default function GameRoot() {
                 potions. <b style={{ color: "#ffd54f" }}>You only decide: FIGHT or RETREAT.</b>
               </p>
               <p className="lead">
-                Goal is randomized every run. Beat the quiz goblins before HP, energy, or time runs out.
+                {cfg.session.rounds} rounds, randomized goals. Survive the quiz mobs before HP, energy,
+                or time runs out.
               </p>
               <div style={{ display: "flex", gap: 10, justifyContent: "center", marginTop: 12 }}>
                 <button className="pixel-btn primary" onClick={() => newGame(mode)}>
@@ -210,7 +253,12 @@ export default function GameRoot() {
               </div>
               <p className="subtitle" style={{ marginTop: 10 }}>
                 <span className="kbd">1–4</span> answer · <span className="kbd">R</span> retreat/restart ·{" "}
-                <span className="kbd">G</span> ghost path
+                <span className="kbd">G</span> ghost path · <span className="kbd">F</span> fullscreen
+              </p>
+              <p style={{ marginTop: 8 }}>
+                <a href="/eval" className="chip" style={{ textDecoration: "none" }}>
+                  🔬 EVAL LAB — naive vs adaptive agent
+                </a>
               </p>
             </div>
           </div>
@@ -232,25 +280,56 @@ export default function GameRoot() {
           />
         )}
 
+        {/* round clear banner */}
+        {game && game.phase === "roundclear" && (
+          <div className="overlay">
+            <div className="pixel-panel" style={{ width: 420, textAlign: "center" }}>
+              <div className="title" style={{ fontSize: 18, color: "#66bb6a" }}>
+                ROUND {game.round} CLEAR!
+              </div>
+              <p className="lead">
+                Reached <b>{game.map.goalName}</b> · +{cfg.scoring.w_round} score
+              </p>
+              <p className="lead">
+                HP {Math.ceil(game.hp)} and energy {Math.ceil(game.energy)} carry over. New campus,
+                new goal, fresh clock.
+              </p>
+              <button
+                className="pixel-btn primary"
+                style={{ marginTop: 8 }}
+                onClick={() => game.nextRound()}
+              >
+                ▶ Round {game.round + 1} (Enter)
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* end screens */}
         {game && (game.phase === "won" || game.phase === "lost") && (
           <div className="overlay">
-            <div className="pixel-panel" style={{ width: 480, textAlign: "center" }}>
+            <div className="pixel-panel" style={{ width: 500, textAlign: "center" }}>
               {game.phase === "won" ? (
                 <>
                   <div className="end-grade">{game.grade}</div>
                   <div style={{ color: "#66bb6a", marginBottom: 6 }}>
-                    REACHED {game.map.goalName.toUpperCase()}!
+                    ALL {cfg.session.rounds} ROUNDS CLEAR!
                   </div>
                 </>
               ) : (
-                <div style={{ color: "#ef5350", fontSize: 14, marginBottom: 6 }}>
-                  GAME OVER — {game.failReason}
-                </div>
+                <>
+                  <div style={{ color: "#ef5350", fontSize: 14, marginBottom: 6 }}>
+                    GAME OVER — {game.failReason}
+                  </div>
+                  <div className="lead">
+                    cleared {game.roundsCleared}/{cfg.session.rounds} rounds
+                  </div>
+                </>
               )}
               <div className="lead">
                 Score <b style={{ color: "#ffd54f" }}>{game.score}</b> · correct {game.correct}/
-                {game.answered} · fights {game.fights} · retreats {game.retreats} · replans {game.replans}
+                {game.answered} · fights {game.fights} · retreats {game.retreats} · replans{" "}
+                {game.replans}
               </div>
               <div className="lead">
                 followed AI {game.followed} · defied {game.defied}
@@ -281,7 +360,11 @@ export default function GameRoot() {
                 </ol>
               )}
 
-              <button className="pixel-btn primary" style={{ marginTop: 12 }} onClick={() => newGame(game.mode)}>
+              <button
+                className="pixel-btn primary"
+                style={{ marginTop: 12 }}
+                onClick={() => newGame(game.mode)}
+              >
                 ▶ Play again (R)
               </button>
             </div>
@@ -289,10 +372,10 @@ export default function GameRoot() {
         )}
       </div>
 
-      <p className="subtitle" style={{ marginTop: 10 }}>
-        Orange = risk-aware route · dashed gray = naive shortest path (the difference IS the AI&rsquo;s
-        judgment) · cyan flash = A* explored set · <span className="kbd">!</span> = gatekeeper mob
-      </p>
+      <div className="app-footer subtitle">
+        Orange = risk-aware route · dashed gray = naive shortest path · cyan flash = A* explored set ·{" "}
+        <span className="kbd">!</span> = gatekeeper mob
+      </div>
     </div>
   );
 }

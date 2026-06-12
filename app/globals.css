@@ -47,6 +47,8 @@ canvas {
     0 0 0 3px #090b14,
     inset 0 0 0 2px #090b14;
   padding: 12px;
+  max-height: 92vh;
+  overflow-y: auto;
 }
 
 .title {
@@ -267,9 +269,36 @@ button.pixel-btn.recommended {
 
 .game-stage {
   position: relative;
-  display: inline-block;
+  flex: 1;
+  min-height: 0;
   border: 3px solid var(--border);
   box-shadow: 0 0 0 3px #090b14;
+  overflow: hidden;
+  background: #090b14;
+}
+
+.game-stage:fullscreen {
+  border: none;
+  box-shadow: none;
+}
+
+.app-shell {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  height: 100dvh;
+  padding: 8px 12px;
+  gap: 8px;
+}
+
+.app-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.app-footer {
+  flex: none;
 }
 
 .scanlines::after {
@@ -312,6 +341,12 @@ table.eval th {
 .lead {
   font-size: 9px;
   color: var(--dim);
+}
+
+/* compact HUD inside the flex shell */
+.hud-panel {
+  flex: none;
+  padding: 8px 12px !important;
 }
 
 a {
