@@ -1,0 +1,49 @@
+{
+  "resources": { "hp_max": 100, "energy_max": 100, "time_limit": 150 },
+  "modes": {
+    "class":   { "time_limit": 150, "deterministic": false, "bank": "cs-review" },
+    "exhibit": { "time_limit": 90,  "deterministic": true,  "bank": "trivia-easy" }
+  },
+  "costs": {
+    "path": 1, "grass": 3, "mud": 4,
+    "move_energy": 1, "attack_energy": 6, "round_time": 1, "retreat_time": 6
+  },
+  "mobs": {
+    "slime":  { "hits": 1, "hp_loss": 10 },
+    "goblin": { "hits": 2, "hp_loss": 18 },
+    "wraith": { "hits": 3, "hp_loss": 25 }
+  },
+  "items": { "med_kit": 45, "energy_drink": 50, "time_charm": 20 },
+  "agent": {
+    "avoidance_first": true,
+    "avoidance_bias": 1.5,
+    "feasibility_margin": 1.2,
+    "accuracy_prior": 0.7,
+    "prior_strength_class": 10,
+    "prior_strength_exhibit": 5,
+    "bands": [[70, "Confident"], [40, "Cautious"], [15, "Defensive"], [0, "Survival"]],
+    "hysteresis_hp": 5,
+    "toast_cooldown_sec": 5
+  },
+  "ui": { "camera": "centered-hero", "tween_ms": 240 },
+  "mapgen": {
+    "spawn": "center",
+    "min_goal_dist_pct": 0.6,
+    "anti_repeat_quadrant": true,
+    "gatekeepers": "all-route-families",
+    "fights": { "class": [1, 4], "exhibit": [1, 3] },
+    "optional_mobs": 3,
+    "grid": [24, 18],
+    "grass_encounter_chance": 0.12,
+    "question_timer_sec": 15
+  },
+  "scoring": {
+    "w_goal": 1000,
+    "w_correct": 50,
+    "w_time": 2,
+    "w_energy": 1,
+    "w_hp": 1,
+    "streak_len": 3,
+    "streak_bonus": 150
+  }
+}
