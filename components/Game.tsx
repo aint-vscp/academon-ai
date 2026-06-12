@@ -13,7 +13,8 @@ import questionsJson from "@/data/questions.json";
 import GameCanvas from "./GameCanvas";
 import Hud from "./Hud";
 import BattleScene from "./BattleScene";
-import { preloadSprites } from "@/lib/sprites";
+import StartFlow, { type StartChoice } from "./StartFlow";
+import { preloadSprites, setHeroVariant } from "@/lib/sprites";
 
 const cfg = configJson as unknown as Config;
 const banks = questionsJson as unknown as Record<string, Question[]>;
@@ -58,6 +59,8 @@ export default function GameRoot() {
   const [toasts, setToasts] = useState<{ t: number; msg: string }[]>([]);
   const stageRef = useRef<HTMLDivElement>(null);
   const roundClearAt = useRef(0);
+  const [choice, setChoice] = useState<StartChoice | null>(null);
+  const answerApiRef = useRef<((i: number) => void) | null>(null);
 
   // mode from ?mode=exhibit
   useEffect(() => {
@@ -67,7 +70,9 @@ export default function GameRoot() {
     preloadSprites();
   }, []);
 
-  const newGame = useCallback((m: GameMode) => {
+  const newGame = useCallback((m: GameMode, c: StartChoice) => {
+    setChoice(c);
+    setHeroVariant(c.hero);
     const bank = banks[cfg.modes[m].bank] ?? Object.values(banks)[0];
     // anti-repeat rule: never the same goal quadrant twice in a row (§II.2)
     const prevQuad = Number(localStorage.getItem("academon-last-quadrant") ?? "-1");
@@ -80,10 +85,15 @@ export default function GameRoot() {
     localStorage.setItem("academon-last-quadrant", String(quadrantOf(game.map, game.map.goal)));
     gameRef.current = game;
     setSavedScore(false);
-    setInitials("");
+    setInitials(c.name.slice(0, 3).toUpperCase());
     toastsSince.current = 0;
     setToasts([]);
     game.start();
+    force((v) => v + 1);
+  }, []);
+
+  const backToTitle = useCallback(() => {
+    gameRef.current = null;
     force((v) => v + 1);
   }, []);
 
@@ -143,8 +153,12 @@ export default function GameRoot() {
         if (e.key >= "1" && e.key <= "4") {
           const i = Number(e.key) - 1;
           if (i < game.battle.shuffledChoices.length) {
-            game.fightChosen();
-            game.answer(i);
+            // route through the battle scene so the animation plays
+            if (answerApiRef.current) answerApiRef.current(i);
+            else {
+              game.fightChosen();
+              game.answer(i);
+            }
             force((v) => v + 1);
           }
         } else if (e.key.toLowerCase() === "r") {
@@ -157,13 +171,13 @@ export default function GameRoot() {
           game.nextRound();
         }
       } else if (game.phase === "won" || game.phase === "lost") {
-        if (e.key.toLowerCase() === "r") newGame(game.mode);
+        if (e.key.toLowerCase() === "r" && choice) newGame(game.mode, choice);
       }
       if (e.key.toLowerCase() === "g") showGhostRef.current = !showGhostRef.current;
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [newGame, toggleFullscreen]);
+  }, [newGame, toggleFullscreen, choice]);
 
   const game = gameRef.current;
   const inGame =
@@ -189,27 +203,32 @@ export default function GameRoot() {
 
   return (
     <div className="app-shell">
-      {/* compact header */}
-      <div className="app-header">
-        <div>
-          <span className="title" style={{ fontSize: 14 }}>
-            ACADÉMON AI
-          </span>
-          <span className="subtitle" style={{ marginLeft: 10 }}>
-            Gotta Pass &rsquo;Em All · {mode.toUpperCase()}
-          </span>
-        </div>
-        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-          {inGame && (
+      {/* compact header — hidden during the start flow for the full mockup look */}
+      {inGame && (
+        <div className="app-header">
+          <div>
+            <span className="title" style={{ fontSize: 14 }}>
+              ACADÉMON AI
+            </span>
+            <span className="subtitle" style={{ marginLeft: 10 }}>
+              Gotta Pass &rsquo;Em All · {mode.toUpperCase()}
+            </span>
+          </div>
+          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            {choice && (
+              <span className="chip">
+                <b>{choice.name.toUpperCase()}</b> · {choice.hero === "isko" ? "ISKO" : "ISKA"}
+              </span>
+            )}
             <span className="chip">
               ROUND <b>{game!.round}/{cfg.session.rounds}</b>
             </span>
-          )}
-          <button className="pixel-btn" style={{ padding: "4px 8px", fontSize: 8 }} onClick={toggleFullscreen}>
-            ⛶ Fullscreen (F)
-          </button>
+            <button className="pixel-btn" style={{ padding: "4px 8px", fontSize: 8 }} onClick={toggleFullscreen}>
+              ⛶ Fullscreen (F)
+            </button>
+          </div>
         </div>
-      </div>
+      )}
 
       {inGame && <Hud game={game!} />}
 
@@ -225,49 +244,25 @@ export default function GameRoot() {
           ))}
         </div>
 
-        {/* start screen — the ONLY place that links to the Eval Lab */}
+        {/* start flow (title → options → character select → name) — Eval Lab lives here only */}
         {(!game || game.phase === "idle") && (
-          <div className="overlay">
-            <div className="pixel-panel" style={{ width: 480, textAlign: "center" }}>
-              <div className="title" style={{ fontSize: 16 }}>
-                ACADÉMON AI
-              </div>
-              <p className="lead">
-                The AI autopilots your scholar across campus — picking routes, dodging mobs, grabbing
-                potions. <b style={{ color: "#ffd54f" }}>You only decide: FIGHT or RETREAT.</b>
-              </p>
-              <p className="lead">
-                {cfg.session.rounds} rounds, randomized goals. Survive the quiz mobs before HP, energy,
-                or time runs out.
-              </p>
-              <div style={{ display: "flex", gap: 10, justifyContent: "center", marginTop: 12 }}>
-                <button className="pixel-btn primary" onClick={() => newGame(mode)}>
-                  ▶ Start ({mode})
-                </button>
-                <button
-                  className="pixel-btn"
-                  onClick={() => setMode((m) => (m === "class" ? "exhibit" : "class"))}
-                >
-                  Mode: {mode}
-                </button>
-              </div>
-              <p className="subtitle" style={{ marginTop: 10 }}>
-                <span className="kbd">1–4</span> answer · <span className="kbd">R</span> retreat/restart ·{" "}
-                <span className="kbd">G</span> ghost path · <span className="kbd">F</span> fullscreen
-              </p>
-              <p style={{ marginTop: 8 }}>
-                <a href="/eval" className="chip" style={{ textDecoration: "none" }}>
-                  🔬 EVAL LAB — naive vs adaptive agent
-                </a>
-              </p>
-            </div>
-          </div>
+          <StartFlow
+            mode={mode}
+            onModeChange={setMode}
+            ghostDefault={showGhostRef.current}
+            onGhostChange={(v) => {
+              showGhostRef.current = v;
+              force((x) => x + 1);
+            }}
+            onStart={(c) => newGame(mode, c)}
+          />
         )}
 
         {/* battle */}
         {game && game.phase === "battle" && game.battle && (
           <BattleScene
             game={game}
+            answerApiRef={answerApiRef}
             onAnswer={(i) => {
               game.fightChosen();
               game.answer(i);
@@ -360,21 +355,31 @@ export default function GameRoot() {
                 </ol>
               )}
 
-              <button
-                className="pixel-btn primary"
-                style={{ marginTop: 12 }}
-                onClick={() => newGame(game.mode)}
-              >
-                ▶ Play again (R)
-              </button>
+              <div style={{ display: "flex", gap: 10, justifyContent: "center", marginTop: 12 }}>
+                <button
+                  className="pixel-btn primary"
+                  onClick={() => choice && newGame(game.mode, choice)}
+                >
+                  ▶ Play again (R)
+                </button>
+                <button className="pixel-btn" onClick={backToTitle}>
+                  ⌂ Menu
+                </button>
+              </div>
             </div>
           </div>
         )}
       </div>
 
       <div className="app-footer subtitle">
-        Orange = risk-aware route · dashed gray = naive shortest path · cyan flash = A* explored set ·{" "}
-        <span className="kbd">!</span> = gatekeeper mob
+        {inGame ? (
+          <>
+            Orange = risk-aware route · dashed gray = naive shortest path · cyan flash = A* explored
+            set · <span className="kbd">!</span> = gatekeeper mob
+          </>
+        ) : (
+          <>Group 2 · Intro to AI · Polytechnic University of the Philippines</>
+        )}
       </div>
     </div>
   );

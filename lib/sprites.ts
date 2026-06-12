@@ -16,6 +16,8 @@ export type SpriteName =
   | "terrain_wall"
   | "terrain_ledge"
   | "hero"
+  | "hero_isko"
+  | "hero_iska"
   | "mob_slime"
   | "mob_goblin"
   | "mob_wraith"
@@ -32,6 +34,8 @@ export const SPRITE_NAMES: SpriteName[] = [
   "terrain_wall",
   "terrain_ledge",
   "hero",
+  "hero_isko",
+  "hero_iska",
   "mob_slime",
   "mob_goblin",
   "mob_wraith",
@@ -40,6 +44,20 @@ export const SPRITE_NAMES: SpriteName[] = [
   "item_timecharm",
   "goal_building",
 ];
+
+// ---- chosen playable character (Isko / Iska) ----
+export type HeroVariant = "isko" | "iska";
+let heroVariant: HeroVariant = "isko";
+export function setHeroVariant(v: HeroVariant) {
+  heroVariant = v;
+}
+export function getHeroVariant(): HeroVariant {
+  return heroVariant;
+}
+/** Portrait art for the chosen character (start flow + battles + map). */
+export function heroPortraitSrc(v: HeroVariant = heroVariant): string {
+  return `/ui/char_${v}.png`;
+}
 
 export const SPRITE_SIZE = 16; // native pixels; renderer scales with nearest-neighbor
 
@@ -132,6 +150,40 @@ const placeholders: Record<SpriteName, () => HTMLCanvasElement> = {
       px(4, 13, 3, 2, "#1a1a2e");
       px(9, 13, 3, 2, "#1a1a2e");
     }),
+  hero_isko: () =>
+    paint((px) => {
+      // Isko: brown hair, blue jacket, red tie, jeans
+      px(4, 1, 8, 3, "#6d4c2f"); // hair
+      px(3, 2, 2, 2, "#6d4c2f");
+      px(11, 2, 2, 2, "#6d4c2f");
+      px(5, 4, 6, 3, "#ffcc9c"); // face
+      px(6, 5, 1, 1, "#222");
+      px(9, 5, 1, 1, "#222");
+      px(4, 7, 8, 5, "#2457c5"); // jacket
+      px(7, 7, 2, 3, "#fff"); // shirt
+      px(7, 8, 2, 2, "#d32f2f"); // tie
+      px(4, 12, 8, 2, "#27365c"); // jeans
+      px(4, 14, 3, 1, "#fff"); // shoes
+      px(9, 14, 3, 1, "#fff");
+    }),
+  hero_iska: () =>
+    paint((px) => {
+      // Iska: brown bob, white blouse, red bow, yellow skirt
+      px(4, 1, 8, 3, "#7d5838"); // hair
+      px(3, 2, 2, 3, "#7d5838");
+      px(11, 2, 2, 3, "#7d5838");
+      px(10, 1, 2, 1, "#ffd54f"); // hair clip
+      px(5, 4, 6, 3, "#ffd2a8"); // face
+      px(6, 5, 1, 1, "#1c3aa9");
+      px(9, 5, 1, 1, "#1c3aa9");
+      px(4, 7, 8, 4, "#fafafa"); // blouse
+      px(7, 7, 2, 2, "#d32f2f"); // bow
+      px(4, 11, 8, 2, "#f5b81c"); // skirt
+      px(5, 13, 2, 1, "#fff"); // socks
+      px(9, 13, 2, 1, "#fff");
+      px(4, 14, 3, 1, "#e8e8e8"); // shoes
+      px(9, 14, 3, 1, "#e8e8e8");
+    }),
   mob_slime: () =>
     paint((px) => {
       px(3, 7, 10, 6, "#42a5f5");
@@ -212,6 +264,7 @@ const placeholders: Record<SpriteName, () => HTMLCanvasElement> = {
 /**
  * Resolve a sprite: PNG from /sprites/<name>.png when available,
  * procedural placeholder otherwise. Synchronous fallback, async upgrade.
+ * Hero variants additionally fall back to the extracted /ui portraits.
  */
 export function getSprite(name: SpriteName): Drawable {
   const hit = cache.get(name);
@@ -221,7 +274,14 @@ export function getSprite(name: SpriteName): Drawable {
   // async PNG upgrade — swaps into the cache when it loads
   const img = new Image();
   img.onload = () => cache.set(name, img);
-  img.onerror = () => {};
+  img.onerror = () => {
+    if (name === "hero_isko" || name === "hero_iska") {
+      const portrait = new Image();
+      portrait.onload = () => cache.set(name, portrait);
+      portrait.onerror = () => {};
+      portrait.src = heroPortraitSrc(name.slice(5) as HeroVariant);
+    }
+  };
   img.src = `/sprites/${name}.png`;
   return ph;
 }

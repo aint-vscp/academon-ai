@@ -6,7 +6,7 @@
 import { useEffect, useRef } from "react";
 import type { Game } from "@/engine/game";
 import { terrainAt } from "@/engine/grid";
-import { getSprite, type SpriteName } from "@/lib/sprites";
+import { getHeroVariant, getSprite, type SpriteName } from "@/lib/sprites";
 
 export const TILE = 32;
 
@@ -19,16 +19,20 @@ const terrainSprite: Record<string, SpriteName> = {
   ledge: "terrain_ledge",
 };
 
-function heroPixel(game: Game): { x: number; y: number } {
+function heroPixel(game: Game): { x: number; y: number; dx: number; walking: boolean } {
   const cur = game.pos;
   const next = game.route[game.routeIdx + 1];
   let fx = cur.x;
   let fy = cur.y;
+  let dx = 0;
+  let walking = false;
   if (game.phase === "running" && next) {
     fx = cur.x + (next.x - cur.x) * game.moveProgress;
     fy = cur.y + (next.y - cur.y) * game.moveProgress;
+    dx = next.x - cur.x;
+    walking = true;
   }
-  return { x: fx * TILE, y: fy * TILE };
+  return { x: fx * TILE, y: fy * TILE, dx, walking };
 }
 
 export function drawGame(ctx: CanvasRenderingContext2D, game: Game, showGhost: boolean) {
@@ -136,8 +140,28 @@ export function drawGame(ctx: CanvasRenderingContext2D, game: Game, showGhost: b
     }
   }
 
-  // hero (AcadéMon)
-  ctx.drawImage(getSprite("hero"), hp.x + 2, hp.y - 4, TILE - 4, TILE + 2);
+  // hero (Isko / Iska) — walking animation: bob + sway + direction flip
+  const heroSprite = getSprite(`hero_${getHeroVariant()}` as SpriteName);
+  const natW = "naturalWidth" in heroSprite ? heroSprite.naturalWidth || 16 : heroSprite.width;
+  const natH = "naturalHeight" in heroSprite ? heroSprite.naturalHeight || 16 : heroSprite.height;
+  const drawH = TILE * 1.35;
+  const drawW = Math.min(TILE * 1.1, (drawH * natW) / natH);
+  const stepPhase = game.steps + game.moveProgress;
+  const bob = hp.walking ? Math.abs(Math.sin(stepPhase * Math.PI)) * 4 : 0;
+  const sway = hp.walking ? Math.sin(stepPhase * Math.PI * 2) * 0.08 : 0;
+  const cxp = hp.x + TILE / 2;
+  const cyp = hp.y + TILE - drawH / 2;
+  ctx.save();
+  ctx.translate(cxp, cyp + drawH / 2);
+  if (hp.dx < 0) ctx.scale(-1, 1); // face the way you walk
+  ctx.rotate(sway);
+  // tiny shadow
+  ctx.fillStyle = "rgba(0,0,0,0.3)";
+  ctx.beginPath();
+  ctx.ellipse(0, drawH / 2 - 2, drawW / 2.6, 3.5, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.drawImage(heroSprite, -drawW / 2, -drawH / 2 - bob, drawW, drawH);
+  ctx.restore();
 
   ctx.restore();
 }
