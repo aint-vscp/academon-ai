@@ -1067,6 +1067,8 @@ input.pixel-input {
 
 .congrats-trophy {
   width: clamp(140px, 18vw, 220px);
+  max-height: 30vh;
+  object-fit: contain;
   image-rendering: pixelated;
   margin: 8px 0;
   animation: idle-bob 2.6s ease-in-out infinite;
@@ -1119,4 +1121,125 @@ input.pixel-input {
   image-rendering: pixelated;
   margin-right: 6px;
   vertical-align: -2px;
+}
+
+/* ============ ROUND 13: HUD ICONS, BADGES, REWARD ENDING ============ */
+
+.hud-icon {
+  width: 12px;
+  height: 12px;
+  image-rendering: pixelated;
+  vertical-align: -2px;
+  margin-right: 4px;
+}
+
+.round-badge {
+  width: clamp(72px, 9vw, 110px);
+  image-rendering: pixelated;
+  margin: 8px auto 4px;
+  display: block;
+  filter: drop-shadow(0 0 12px rgba(255, 213, 79, 0.4));
+  animation: idle-bob 2.6s ease-in-out infinite;
+}
+
+.congrats-badges {
+  display: flex;
+  gap: 14px;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.congrats-badges img {
+  width: clamp(40px, 5vw, 62px);
+  image-rendering: pixelated;
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.4));
+}
+
+.q-set {
+  color: #ffd54f;
+  font-size: 0.82em;
+}
+
+/* white circular reward ending */
+.reward-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 80;
+  pointer-events: all;
+}
+
+.reward-circle {
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(circle at 50% 50%, #fff 0px, transparent 1px);
+}
+
+.reward-content {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  text-align: center;
+  padding: 24px;
+  color: #1a1430;
+  opacity: 0;
+  transition: opacity 320ms steps(4);
+}
+
+.reward-content.show {
+  opacity: 1;
+}
+
+.reward-badges {
+  display: flex;
+  gap: 18px;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.reward-badges img {
+  width: clamp(58px, 8vw, 96px);
+  image-rendering: pixelated;
+  filter: drop-shadow(0 3px 8px rgba(0, 0, 0, 0.25));
+  animation: idle-bob 2.8s ease-in-out infinite;
+}
+
+.reward-head {
+  font-size: clamp(16px, 3vw, 30px);
+  color: #d4901a;
+  letter-spacing: 2px;
+  text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.12);
+}
+
+.reward-grade {
+  font-size: clamp(11px, 1.6vw, 15px);
+  color: #5a4b8a;
+  letter-spacing: 1px;
+}
+
+.reward-grade b {
+  color: #7e3ff2;
+}
+
+.reward-msg {
+  font-size: clamp(13px, 2.1vw, 22px);
+  line-height: 2;
+  color: #1a1430;
+  letter-spacing: 1px;
+  margin-top: 6px;
+}
+
+.reward-msg b {
+  color: #d62828;
+  font-size: 1.12em;
+}
+
+.reward-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin-top: 14px;
 }

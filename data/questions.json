@@ -1,96 +1,682 @@
 {
   "cs-review": [
-    { "id": "cs01", "subject": "Algorithms", "difficulty": "easy", "q": "What does A* add to Dijkstra's algorithm?", "choices": ["A heuristic estimate of remaining cost", "A random restart step", "Multiple goal nodes", "Negative edge support"], "explain": "A* expands by f = g + h, where h estimates the remaining cost." },
-    { "id": "cs02", "subject": "Algorithms", "difficulty": "easy", "q": "Big-O of binary search?", "choices": ["O(log n)", "O(n)", "O(n log n)", "O(1)"], "explain": "Each step halves the search space." },
-    { "id": "cs03", "subject": "Data Structures", "difficulty": "easy", "q": "Which structure is FIFO?", "choices": ["Queue", "Stack", "Tree", "Heap"], "explain": "Queues are first-in, first-out." },
-    { "id": "cs04", "subject": "Data Structures", "difficulty": "easy", "q": "Which structure does DFS naturally use?", "choices": ["Stack", "Queue", "Priority queue", "Hash map"], "explain": "Depth-first search uses a stack (or recursion)." },
-    { "id": "cs05", "subject": "Algorithms", "difficulty": "easy", "q": "BFS explores nodes in order of…", "choices": ["Distance in edges from the start", "Heuristic value", "Random order", "Edge weight"], "explain": "Breadth-first = level by level." },
-    { "id": "cs06", "subject": "AI", "difficulty": "easy", "q": "In PEAS, the E stands for…", "choices": ["Environment", "Energy", "Evaluation", "Effort"], "explain": "Performance, Environment, Actuators, Sensors." },
-    { "id": "cs07", "subject": "AI", "difficulty": "easy", "q": "An agent that ignores percept history is called…", "choices": ["Simple reflex agent", "Learning agent", "Utility agent", "Goal agent"], "explain": "Simple reflex agents act only on the current percept." },
-    { "id": "cs08", "subject": "Programming", "difficulty": "easy", "q": "What does '==' usually test?", "choices": ["Value equality", "Reference identity", "Type only", "Hash value"], "explain": "Most languages use == for value comparison." },
-    { "id": "cs09", "subject": "Data Structures", "difficulty": "easy", "q": "Average lookup in a hash table?", "choices": ["O(1)", "O(log n)", "O(n)", "O(n^2)"], "explain": "Hashing gives constant average lookups." },
-    { "id": "cs10", "subject": "Networking", "difficulty": "easy", "q": "HTTP runs on top of…", "choices": ["TCP", "UDP", "ICMP", "ARP"], "explain": "HTTP uses TCP for reliable delivery (HTTP/3 uses QUIC/UDP)." },
-    { "id": "cs11", "subject": "Databases", "difficulty": "easy", "q": "SQL keyword to remove duplicate rows?", "choices": ["DISTINCT", "UNIQUE", "GROUP", "PRUNE"], "explain": "SELECT DISTINCT removes duplicates." },
-    { "id": "cs12", "subject": "OS", "difficulty": "easy", "q": "A process's saved execution state is the…", "choices": ["Context", "Heap", "Socket", "Inode"], "explain": "Context switching saves/restores process state." },
-    { "id": "cs13", "subject": "Programming", "difficulty": "easy", "q": "Which loop always runs at least once?", "choices": ["do-while", "while", "for", "foreach"], "explain": "do-while checks the condition after the body." },
-    { "id": "cs14", "subject": "AI", "difficulty": "easy", "q": "State-space search finds…", "choices": ["A path from initial state to goal state", "The largest dataset", "A neural weight", "A database index"], "explain": "Search = sequence of actions from start to goal." },
-    { "id": "cs15", "subject": "Math", "difficulty": "easy", "q": "Manhattan distance between (0,0) and (3,4)?", "choices": ["7", "5", "12", "25"], "explain": "|3| + |4| = 7. (Euclidean would be 5.)" },
-    { "id": "cs16", "subject": "Data Structures", "difficulty": "easy", "q": "A binary heap is commonly used for a…", "choices": ["Priority queue", "Symbol table", "Linked list", "Spreadsheet"], "explain": "Heaps give O(log n) push/pop of the min/max." },
-    { "id": "cs17", "subject": "Programming", "difficulty": "easy", "q": "JSON stands for…", "choices": ["JavaScript Object Notation", "Java Standard Object Name", "Joined Sequence of Nodes", "Just Some Output Now"], "explain": "Lightweight data-interchange format." },
-    { "id": "cs18", "subject": "OS", "difficulty": "easy", "q": "Deadlock requires circular…", "choices": ["Wait", "Memory", "Files", "Users"], "explain": "Circular wait is one of the four Coffman conditions." },
-    { "id": "cs19", "subject": "Networking", "difficulty": "easy", "q": "An IP address identifies a…", "choices": ["Host on a network", "File on disk", "CPU core", "Database row"], "explain": "IP addresses identify network endpoints." },
-    { "id": "cs20", "subject": "AI", "difficulty": "easy", "q": "A heuristic that never overestimates is called…", "choices": ["Admissible", "Greedy", "Consistent only", "Inadmissible"], "explain": "Admissibility keeps A* optimal." },
-    { "id": "cs21", "subject": "Algorithms", "difficulty": "medium", "q": "Worst case of quicksort?", "choices": ["O(n^2)", "O(n log n)", "O(log n)", "O(n)"], "explain": "Bad pivots (sorted input, naive pivot) degrade to quadratic." },
-    { "id": "cs22", "subject": "Algorithms", "difficulty": "medium", "q": "Greedy best-first search uses f(n) = …", "choices": ["h(n) only", "g(n) only", "g(n) + h(n)", "g(n) − h(n)"], "explain": "Greedy ignores path cost so far — fast but not optimal." },
-    { "id": "cs23", "subject": "AI", "difficulty": "medium", "q": "If h is admissible, A* tree search returns…", "choices": ["An optimal solution", "A random solution", "The shortest heuristic", "Only failure"], "explain": "Never overestimating ⇒ first goal expansion is optimal." },
-    { "id": "cs24", "subject": "Data Structures", "difficulty": "medium", "q": "Inserting into a balanced BST is…", "choices": ["O(log n)", "O(1)", "O(n)", "O(n log n)"], "explain": "Height of a balanced tree is log n." },
-    { "id": "cs25", "subject": "Algorithms", "difficulty": "medium", "q": "Dijkstra fails with…", "choices": ["Negative edge weights", "Cycles", "Undirected edges", "Multiple goals"], "explain": "Negative edges break its greedy invariant — use Bellman-Ford." },
-    { "id": "cs26", "subject": "Databases", "difficulty": "medium", "q": "A transaction's ACID 'I' means…", "choices": ["Isolation", "Indexing", "Integrity", "Iteration"], "explain": "Concurrent transactions must not interfere." },
-    { "id": "cs27", "subject": "OS", "difficulty": "medium", "q": "Thrashing happens when…", "choices": ["Pages are swapped constantly", "CPU is idle", "Cache hits rise", "Disk is full"], "explain": "Too little RAM ⇒ the OS spends its time paging." },
-    { "id": "cs28", "subject": "Networking", "difficulty": "medium", "q": "TCP guarantees…", "choices": ["Ordered, reliable delivery", "Lowest latency", "Encryption", "Compression"], "explain": "Sequencing + ACKs + retransmission." },
-    { "id": "cs29", "subject": "AI", "difficulty": "medium", "q": "Replanning when the world changes mid-execution is called…", "choices": ["Online / dynamic planning", "Offline planning", "Backtracking", "Memoization"], "explain": "Online planners interleave acting and planning." },
-    { "id": "cs30", "subject": "Programming", "difficulty": "medium", "q": "A pure function…", "choices": ["Has no side effects and same output for same input", "Always returns void", "Uses global state", "Must be recursive"], "explain": "Purity = referential transparency." },
-    { "id": "cs31", "subject": "Algorithms", "difficulty": "medium", "q": "Memoization trades…", "choices": ["Memory for speed", "Speed for memory", "Accuracy for speed", "Code for data"], "explain": "Cache results to skip recomputation." },
-    { "id": "cs32", "subject": "Data Structures", "difficulty": "medium", "q": "Which gives O(1) amortized append?", "choices": ["Dynamic array", "Linked list traversal", "BST", "Sorted array insert"], "explain": "Doubling capacity amortizes to constant time." },
-    { "id": "cs33", "subject": "AI", "difficulty": "medium", "q": "An admissible h₁ dominates h₂ when…", "choices": ["h₁(n) ≥ h₂(n) for all n", "h₁ is faster to compute", "h₂ uses more memory", "h₁ is random"], "explain": "Bigger (still admissible) heuristics expand fewer nodes." },
-    { "id": "cs34", "subject": "Databases", "difficulty": "medium", "q": "An index speeds up…", "choices": ["Lookups but can slow writes", "Writes but slows reads", "Only joins", "Nothing"], "explain": "Indexes are extra structures maintained on write." },
-    { "id": "cs35", "subject": "OS", "difficulty": "medium", "q": "A mutex differs from a semaphore because it…", "choices": ["Has ownership and count of 1", "Counts to N", "Works only across machines", "Is lock-free"], "explain": "Mutex = mutual exclusion with owner; semaphore = counter." },
-    { "id": "cs36", "subject": "Math", "difficulty": "medium", "q": "Expected value of a fair d6?", "choices": ["3.5", "3", "4", "2.5"], "explain": "(1+2+…+6)/6 = 3.5." },
-    { "id": "cs37", "subject": "AI", "difficulty": "medium", "q": "Laplace smoothing prevents…", "choices": ["Zero-probability estimates", "Overflow", "Underfitting only", "Slow convergence"], "explain": "Adds pseudo-counts so unseen events keep nonzero probability." },
-    { "id": "cs38", "subject": "Programming", "difficulty": "medium", "q": "Big-O of nested loops over n each?", "choices": ["O(n^2)", "O(2n)", "O(n log n)", "O(n)"], "explain": "n iterations × n iterations." },
-    { "id": "cs39", "subject": "Networking", "difficulty": "medium", "q": "DNS primarily maps…", "choices": ["Names to IP addresses", "IPs to MACs", "Ports to apps", "URLs to HTML"], "explain": "Domain Name System resolves hostnames." },
-    { "id": "cs40", "subject": "Algorithms", "difficulty": "medium", "q": "Topological sort applies to…", "choices": ["Directed acyclic graphs", "Any graph", "Trees only", "Weighted graphs only"], "explain": "Needs a DAG — cycles have no valid order." },
-    { "id": "cs41", "subject": "AI", "difficulty": "hard", "q": "A consistent heuristic satisfies…", "choices": ["h(n) ≤ c(n,n') + h(n')", "h(n) ≥ g(n)", "h(n) = 0 at start", "h decreasing along any path"], "explain": "Triangle inequality ⇒ f non-decreasing ⇒ no reopening." },
-    { "id": "cs42", "subject": "AI", "difficulty": "hard", "q": "Weighted A* with w>1 is…", "choices": ["Faster but bounded-suboptimal (≤ w×optimal)", "Always optimal", "Complete only on trees", "Equivalent to BFS"], "explain": "f = g + w·h inflates h; solution cost ≤ w × C*." },
-    { "id": "cs43", "subject": "Algorithms", "difficulty": "hard", "q": "Amortized complexity of union-find with path compression + rank?", "choices": ["O(α(n)) — inverse Ackermann", "O(log n)", "O(1) strictly", "O(n)"], "explain": "Effectively constant for all practical n." },
-    { "id": "cs44", "subject": "AI", "difficulty": "hard", "q": "Receding-horizon control means…", "choices": ["Plan on current state, act, then replan", "Plan once offline", "Search backwards only", "Ignore the goal"], "explain": "Exactly what AcadéMon's agent does between events." },
-    { "id": "cs45", "subject": "Data Structures", "difficulty": "hard", "q": "A Fibonacci heap improves Dijkstra to…", "choices": ["O(E + V log V)", "O(V^2 log V)", "O(E log E)", "O(V·E)"], "explain": "O(1) amortized decrease-key." },
-    { "id": "cs46", "subject": "Databases", "difficulty": "hard", "q": "BCNF violation occurs when…", "choices": ["A non-superkey determines an attribute", "A table has two keys", "NULLs exist", "A join is lossless"], "explain": "Every determinant must be a superkey." },
-    { "id": "cs47", "subject": "OS", "difficulty": "hard", "q": "Banker's algorithm decides…", "choices": ["Whether granting a request keeps a safe state", "Page replacement order", "CPU frequency", "Disk scheduling"], "explain": "Deadlock avoidance via safe-sequence simulation." },
-    { "id": "cs48", "subject": "Networking", "difficulty": "hard", "q": "TCP congestion 'slow start' grows cwnd…", "choices": ["Exponentially per RTT", "Linearly per RTT", "Logarithmically", "Not at all"], "explain": "Doubles each RTT until ssthresh." },
-    { "id": "cs49", "subject": "AI", "difficulty": "hard", "q": "D* Lite is preferred over repeated A* when…", "choices": ["Edge costs change locally during execution", "The map never changes", "Heuristics are inadmissible", "Memory is unlimited"], "explain": "It repairs only the affected part of the search tree." },
-    { "id": "cs50", "subject": "Math", "difficulty": "hard", "q": "P(at least one wrong in 3 answers) at p=0.7 correct?", "choices": ["1 − 0.7³ ≈ 0.657", "0.7³ ≈ 0.343", "0.3³ ≈ 0.027", "0.9"], "explain": "Complement of all-correct." },
-    { "id": "cs51", "subject": "Algorithms", "difficulty": "easy", "q": "Which sort is stable?", "choices": ["Merge sort", "Heap sort", "Selection sort", "Quick sort (typical)"], "explain": "Merge sort preserves equal elements' order." },
-    { "id": "cs52", "subject": "Programming", "difficulty": "easy", "q": "Git command to create a commit?", "choices": ["git commit", "git push", "git merge", "git status"], "explain": "Commit records staged changes." },
-    { "id": "cs53", "subject": "AI", "difficulty": "easy", "q": "The agent's f(s) in A* combines…", "choices": ["Past cost g and future estimate h", "Only rewards", "Only penalties", "Random noise"], "explain": "f = g + h." },
-    { "id": "cs54", "subject": "Data Structures", "difficulty": "medium", "q": "A trie is best for…", "choices": ["Prefix string lookups", "Sorting numbers", "Graph cycles", "Matrix math"], "explain": "Tries index strings character by character." },
-    { "id": "cs55", "subject": "OS", "difficulty": "medium", "q": "LRU page replacement evicts…", "choices": ["Least recently used page", "Largest page", "Newest page", "Random page"], "explain": "Approximates temporal locality." },
-    { "id": "cs56", "subject": "Networking", "difficulty": "medium", "q": "NAT translates…", "choices": ["Private to public addresses", "Names to IPs", "Ports to MACs", "HTTP to HTTPS"], "explain": "Network Address Translation shares one public IP." },
-    { "id": "cs57", "subject": "Algorithms", "difficulty": "hard", "q": "Bellman-Ford runs in…", "choices": ["O(V·E)", "O(E log V)", "O(V + E)", "O(V²log V)"], "explain": "Relax all edges V−1 times." },
-    { "id": "cs58", "subject": "AI", "difficulty": "medium", "q": "Expected cost E[fight] = p·c₁ + (1−p)·c₂ is an example of…", "choices": ["Decision theory / expected utility", "Sorting", "Regularization", "Backpropagation"], "explain": "Choosing actions by expected cost." },
-    { "id": "cs59", "subject": "Databases", "difficulty": "easy", "q": "Primary key must be…", "choices": ["Unique and non-null", "Numeric", "Indexed by hand", "Foreign"], "explain": "Identifies each row." },
-    { "id": "cs60", "subject": "Programming", "difficulty": "hard", "q": "Tail-call optimization replaces…", "choices": ["Recursive calls with jumps (constant stack)", "Loops with recursion", "Heap with stack", "Branches with tables"], "explain": "The last call reuses the current frame." }
+    {
+      "id": "e1",
+      "subject": "Math",
+      "difficulty": "easy",
+      "q": "How many degrees are in a right angle?",
+      "choices": [
+        "90 degrees",
+        "45 degrees",
+        "180 degrees",
+        "360 degrees"
+      ],
+      "explain": "A right angle measures exactly 90 degrees."
+    },
+    {
+      "id": "e2",
+      "subject": "Science",
+      "difficulty": "easy",
+      "q": "What is the closest planet to the Sun?",
+      "choices": [
+        "Mercury",
+        "Venus",
+        "Mars",
+        "Earth"
+      ],
+      "explain": "Mercury is the innermost planet of the Solar System."
+    },
+    {
+      "id": "e3",
+      "subject": "Literature",
+      "difficulty": "easy",
+      "q": "What is the term for a word that is opposite in meaning to another word?",
+      "choices": [
+        "Antonym",
+        "Synonym",
+        "Homophone",
+        "Acronym"
+      ],
+      "explain": "Antonyms are opposites; synonyms mean the same."
+    },
+    {
+      "id": "e4",
+      "subject": "History",
+      "difficulty": "easy",
+      "q": "Who is widely considered the National Hero of the Philippines?",
+      "choices": [
+        "Dr. Jose Rizal",
+        "Andres Bonifacio",
+        "Emilio Aguinaldo",
+        "Apolinario Mabini"
+      ],
+      "explain": "Dr. Jose Rizal is widely regarded as the national hero."
+    },
+    {
+      "id": "e5",
+      "subject": "Grammar",
+      "difficulty": "easy",
+      "q": "What punctuation mark is used at the end of a question?",
+      "choices": [
+        "Question mark",
+        "Comma",
+        "Exclamation point",
+        "Period"
+      ],
+      "explain": "Questions end with a question mark (?)."
+    },
+    {
+      "id": "e6",
+      "subject": "Biology",
+      "difficulty": "easy",
+      "q": "What do herbivores primarily eat?",
+      "choices": [
+        "Plants",
+        "Meat",
+        "Insects",
+        "Fungi"
+      ],
+      "explain": "Herbivores feed primarily on plants."
+    },
+    {
+      "id": "m1",
+      "subject": "Physics",
+      "difficulty": "medium",
+      "q": "What invisible force keeps planets in orbit around the sun?",
+      "choices": [
+        "Gravity",
+        "Magnetism",
+        "Friction",
+        "Inertia"
+      ],
+      "explain": "Gravity holds planets in their orbits."
+    },
+    {
+      "id": "m2",
+      "subject": "Math",
+      "difficulty": "medium",
+      "q": "What is the value of Pi rounded to two decimal places?",
+      "choices": [
+        "3.14",
+        "3.12",
+        "3.16",
+        "3.18"
+      ],
+      "explain": "Pi rounds to 3.14."
+    },
+    {
+      "id": "m3",
+      "subject": "History",
+      "difficulty": "medium",
+      "q": "Who was the first President of the Philippine Republic?",
+      "choices": [
+        "Emilio Aguinaldo",
+        "Manuel L. Quezon",
+        "Jose P. Laurel",
+        "Sergio Osmena"
+      ],
+      "explain": "Emilio Aguinaldo led the First Philippine Republic."
+    },
+    {
+      "id": "m4",
+      "subject": "Literature",
+      "difficulty": "medium",
+      "q": "Who is the renowned Filipino poet that wrote the epic “Florante at Laura”?",
+      "choices": [
+        "Francisco Balagtas",
+        "Jose Rizal",
+        "Nick Joaquin",
+        "Lualhati Bautista"
+      ],
+      "explain": "Francisco Balagtas wrote Florante at Laura."
+    },
+    {
+      "id": "m5",
+      "subject": "Geography",
+      "difficulty": "medium",
+      "q": "What is the highest mountain above sea level on Earth?",
+      "choices": [
+        "Mount Everest",
+        "K2",
+        "Mount Kilimanjaro",
+        "Mount Fuji"
+      ],
+      "explain": "Mount Everest is the highest above sea level."
+    },
+    {
+      "id": "m6",
+      "subject": "Biology",
+      "difficulty": "medium",
+      "q": "What part of a plant is primarily responsible for conducting photosynthesis?",
+      "choices": [
+        "The leaf (or leaves)",
+        "The root",
+        "The stem",
+        "The flower"
+      ],
+      "explain": "Photosynthesis occurs mainly in the leaves."
+    },
+    {
+      "id": "m7",
+      "subject": "Grammar",
+      "difficulty": "medium",
+      "q": "What part of speech is used to describe a noun?",
+      "choices": [
+        "Adjective",
+        "Adverb",
+        "Verb",
+        "Pronoun"
+      ],
+      "explain": "Adjectives describe or modify nouns."
+    },
+    {
+      "id": "m8",
+      "subject": "Chemistry",
+      "difficulty": "medium",
+      "q": "What two elements make up a molecule of water?",
+      "choices": [
+        "Hydrogen and Oxygen",
+        "Carbon and Oxygen",
+        "Nitrogen and Hydrogen",
+        "Helium and Oxygen"
+      ],
+      "explain": "Water is H2O: hydrogen and oxygen."
+    },
+    {
+      "id": "h1",
+      "subject": "Chemistry",
+      "difficulty": "hard",
+      "q": "What is the atomic number of Carbon?",
+      "choices": [
+        "6",
+        "4",
+        "8",
+        "12"
+      ],
+      "explain": "Carbon's atomic number is 6."
+    },
+    {
+      "id": "h2",
+      "subject": "Literature",
+      "difficulty": "hard",
+      "q": "What is the literary term for a direct comparison between two things using “like” or “as”?",
+      "choices": [
+        "Simile",
+        "Metaphor",
+        "Personification",
+        "Hyperbole"
+      ],
+      "explain": "A simile compares using 'like' or 'as'."
+    },
+    {
+      "id": "h3",
+      "subject": "History",
+      "difficulty": "hard",
+      "q": "Who was the revolutionary leader famously known as the “Brains of the Katipunan”?",
+      "choices": [
+        "Emilio Jacinto",
+        "Apolinario Mabini",
+        "Antonio Luna",
+        "Andres Bonifacio"
+      ],
+      "explain": "Emilio Jacinto was the Brains of the Katipunan."
+    },
+    {
+      "id": "h4",
+      "subject": "Biology",
+      "difficulty": "hard",
+      "q": "What molecule carries the genetic instructions for life in almost all living organisms?",
+      "choices": [
+        "DNA (Deoxyribonucleic acid)",
+        "RNA",
+        "ATP",
+        "Protein"
+      ],
+      "explain": "DNA stores genetic instructions."
+    },
+    {
+      "id": "h5",
+      "subject": "Physics",
+      "difficulty": "hard",
+      "q": "Which physicist is famous for developing the theory of general relativity?",
+      "choices": [
+        "Albert Einstein",
+        "Isaac Newton",
+        "Nikola Tesla",
+        "Stephen Hawking"
+      ],
+      "explain": "Einstein developed general relativity."
+    },
+    {
+      "id": "h6",
+      "subject": "Economics",
+      "difficulty": "hard",
+      "q": "What economic metric represents the total value of all goods and services produced in a country during one year?",
+      "choices": [
+        "GDP (Gross Domestic Product)",
+        "GNP (Gross National Product)",
+        "CPI (Consumer Price Index)",
+        "Inflation Rate"
+      ],
+      "explain": "GDP measures yearly domestic output."
+    },
+    {
+      "id": "h7",
+      "subject": "Earth Science",
+      "difficulty": "hard",
+      "q": "What is the name of the boundary where two tectonic plates collide?",
+      "choices": [
+        "Convergent boundary",
+        "Divergent boundary",
+        "Transform boundary",
+        "Fault line"
+      ],
+      "explain": "Colliding plates form a convergent boundary."
+    },
+    {
+      "id": "h8",
+      "subject": "Math",
+      "difficulty": "hard",
+      "q": "In a right triangle, what is the term for the longest side opposite the right angle?",
+      "choices": [
+        "Hypotenuse",
+        "Adjacent",
+        "Opposite",
+        "Vertex"
+      ],
+      "explain": "The hypotenuse is opposite the right angle."
+    },
+    {
+      "id": "h9",
+      "subject": "Civics",
+      "difficulty": "hard",
+      "q": "What are the three co-equal branches of the Philippine government?",
+      "choices": [
+        "Executive, Legislative, and Judicial",
+        "Local, National, and International",
+        "Presidential, Senatorial, and Congressional",
+        "Military, Civilian, and Religious"
+      ],
+      "explain": "The three branches are Executive, Legislative, Judicial."
+    },
+    {
+      "id": "h10",
+      "subject": "Astronomy",
+      "difficulty": "hard",
+      "q": "What is the term for a star that suddenly increases greatly in brightness because of a catastrophic explosion?",
+      "choices": [
+        "Supernova",
+        "Black hole",
+        "Nebula",
+        "Pulsar"
+      ],
+      "explain": "A supernova is an exploding star."
+    },
+    {
+      "id": "h11",
+      "subject": "Art History",
+      "difficulty": "hard",
+      "q": "While most famous for the Spoliarium, which Filipino master painter also created the 1892 masterpiece “The Parisian Life”?",
+      "choices": [
+        "Juan Luna",
+        "Felix Resurreccion Hidalgo",
+        "Fernando Amorsolo",
+        "Vicente Manansala"
+      ],
+      "explain": "Juan Luna painted The Parisian Life (1892)."
+    },
+    {
+      "id": "h12",
+      "subject": "Anatomy",
+      "difficulty": "hard",
+      "q": "What is the medical term for the voice box in human anatomy?",
+      "choices": [
+        "Larynx",
+        "Pharynx",
+        "Trachea",
+        "Esophagus"
+      ],
+      "explain": "The larynx is the voice box."
+    }
   ],
   "trivia-easy": [
-    { "id": "tr01", "subject": "Trivia", "difficulty": "easy", "q": "What is the capital of the Philippines?", "choices": ["Manila", "Cebu", "Davao", "Baguio"], "explain": "Manila is the capital." },
-    { "id": "tr02", "subject": "Trivia", "difficulty": "easy", "q": "How many minutes are in one hour?", "choices": ["60", "100", "30", "90"], "explain": "60 minutes = 1 hour." },
-    { "id": "tr03", "subject": "Trivia", "difficulty": "easy", "q": "Which planet is known as the Red Planet?", "choices": ["Mars", "Venus", "Jupiter", "Mercury"], "explain": "Iron oxide makes Mars look red." },
-    { "id": "tr04", "subject": "Trivia", "difficulty": "easy", "q": "What gas do plants take in for photosynthesis?", "choices": ["Carbon dioxide", "Oxygen", "Nitrogen", "Helium"], "explain": "CO₂ + light → sugar + O₂." },
-    { "id": "tr05", "subject": "Trivia", "difficulty": "easy", "q": "What is 7 × 8?", "choices": ["56", "54", "64", "48"], "explain": "7 × 8 = 56." },
-    { "id": "tr06", "subject": "Trivia", "difficulty": "easy", "q": "Who wrote 'Noli Me Tangere'?", "choices": ["José Rizal", "Andrés Bonifacio", "Emilio Aguinaldo", "Apolinario Mabini"], "explain": "Rizal published it in 1887." },
-    { "id": "tr07", "subject": "Trivia", "difficulty": "easy", "q": "Which animal is the largest on Earth?", "choices": ["Blue whale", "Elephant", "Giraffe", "Great white shark"], "explain": "Blue whales reach ~30 m." },
-    { "id": "tr08", "subject": "Trivia", "difficulty": "easy", "q": "How many sides does a hexagon have?", "choices": ["6", "5", "7", "8"], "explain": "Hex = six." },
-    { "id": "tr09", "subject": "Trivia", "difficulty": "easy", "q": "Water freezes at what °C?", "choices": ["0", "32", "100", "-10"], "explain": "0 °C at standard pressure." },
-    { "id": "tr10", "subject": "Trivia", "difficulty": "easy", "q": "Which is the smallest prime number?", "choices": ["2", "1", "3", "0"], "explain": "2 is the only even prime." },
-    { "id": "tr11", "subject": "Trivia", "difficulty": "medium", "q": "Which country hosts the city of Kyoto?", "choices": ["Japan", "China", "South Korea", "Thailand"], "explain": "Kyoto was Japan's old capital." },
-    { "id": "tr12", "subject": "Trivia", "difficulty": "medium", "q": "What does 'WWW' stand for?", "choices": ["World Wide Web", "World Web Window", "Wide World Web", "Web World Wide"], "explain": "Coined by Tim Berners-Lee." },
-    { "id": "tr13", "subject": "Trivia", "difficulty": "medium", "q": "How many continents are there?", "choices": ["7", "5", "6", "8"], "explain": "Commonly counted as seven." },
-    { "id": "tr14", "subject": "Trivia", "difficulty": "medium", "q": "Which Philippine hero is on the ₱5 coin (BSP New Generation)?", "choices": ["Andrés Bonifacio", "José Rizal", "Lapu-Lapu", "Melchora Aquino"], "explain": "Bonifacio appears on the ₱5." },
-    { "id": "tr15", "subject": "Trivia", "difficulty": "medium", "q": "What is H₂O better known as?", "choices": ["Water", "Hydrogen peroxide", "Salt", "Ozone"], "explain": "Two hydrogens, one oxygen." },
-    { "id": "tr16", "subject": "Trivia", "difficulty": "medium", "q": "Which device measures earthquakes?", "choices": ["Seismograph", "Barometer", "Thermometer", "Altimeter"], "explain": "Seismographs record ground motion." },
-    { "id": "tr17", "subject": "Trivia", "difficulty": "easy", "q": "Which color results from mixing blue and yellow?", "choices": ["Green", "Purple", "Orange", "Brown"], "explain": "Blue + yellow = green." },
-    { "id": "tr18", "subject": "Trivia", "difficulty": "easy", "q": "How many legs does a spider have?", "choices": ["8", "6", "10", "12"], "explain": "Arachnids have eight legs." },
-    { "id": "tr19", "subject": "Trivia", "difficulty": "medium", "q": "The Great Barrier Reef is near which country?", "choices": ["Australia", "Brazil", "Mexico", "India"], "explain": "Off Queensland, Australia." },
-    { "id": "tr20", "subject": "Trivia", "difficulty": "medium", "q": "What fraction is equivalent to 0.25?", "choices": ["1/4", "1/3", "1/2", "2/5"], "explain": "0.25 = 25/100 = 1/4." },
-    { "id": "tr21", "subject": "Trivia", "difficulty": "hard", "q": "Which year did the EDSA People Power Revolution happen?", "choices": ["1986", "1983", "1992", "1972"], "explain": "February 1986." },
-    { "id": "tr22", "subject": "Trivia", "difficulty": "hard", "q": "What is the chemical symbol for gold?", "choices": ["Au", "Ag", "Go", "Gd"], "explain": "From Latin 'aurum'." },
-    { "id": "tr23", "subject": "Trivia", "difficulty": "hard", "q": "Which ocean is the deepest?", "choices": ["Pacific", "Atlantic", "Indian", "Arctic"], "explain": "The Mariana Trench is in the Pacific." },
-    { "id": "tr24", "subject": "Trivia", "difficulty": "hard", "q": "How many bits are in one byte?", "choices": ["8", "4", "16", "32"], "explain": "1 byte = 8 bits." },
-    { "id": "tr25", "subject": "Trivia", "difficulty": "hard", "q": "Who painted the Mona Lisa?", "choices": ["Leonardo da Vinci", "Michelangelo", "Raphael", "Van Gogh"], "explain": "Painted in the early 1500s." },
-    { "id": "tr26", "subject": "Trivia", "difficulty": "easy", "q": "Which fruit is famous for keeping the doctor away?", "choices": ["Apple", "Banana", "Mango", "Grape"], "explain": "An apple a day…" },
-    { "id": "tr27", "subject": "Trivia", "difficulty": "easy", "q": "What do bees make?", "choices": ["Honey", "Milk", "Silk", "Wax only"], "explain": "Bees convert nectar into honey." },
-    { "id": "tr28", "subject": "Trivia", "difficulty": "medium", "q": "Which instrument has 88 keys?", "choices": ["Piano", "Guitar", "Violin", "Flute"], "explain": "52 white + 36 black." },
-    { "id": "tr29", "subject": "Trivia", "difficulty": "medium", "q": "What is the largest planet in our solar system?", "choices": ["Jupiter", "Saturn", "Neptune", "Earth"], "explain": "Jupiter is ~11× Earth's diameter." },
-    { "id": "tr30", "subject": "Trivia", "difficulty": "hard", "q": "Polytechnic University of the Philippines was founded in…", "choices": ["1904", "1898", "1925", "1946"], "explain": "Founded as Manila Business School in 1904." }
+    {
+      "id": "e1",
+      "subject": "Math",
+      "difficulty": "easy",
+      "q": "How many degrees are in a right angle?",
+      "choices": [
+        "90 degrees",
+        "45 degrees",
+        "180 degrees",
+        "360 degrees"
+      ],
+      "explain": "A right angle measures exactly 90 degrees."
+    },
+    {
+      "id": "e2",
+      "subject": "Science",
+      "difficulty": "easy",
+      "q": "What is the closest planet to the Sun?",
+      "choices": [
+        "Mercury",
+        "Venus",
+        "Mars",
+        "Earth"
+      ],
+      "explain": "Mercury is the innermost planet of the Solar System."
+    },
+    {
+      "id": "e3",
+      "subject": "Literature",
+      "difficulty": "easy",
+      "q": "What is the term for a word that is opposite in meaning to another word?",
+      "choices": [
+        "Antonym",
+        "Synonym",
+        "Homophone",
+        "Acronym"
+      ],
+      "explain": "Antonyms are opposites; synonyms mean the same."
+    },
+    {
+      "id": "e4",
+      "subject": "History",
+      "difficulty": "easy",
+      "q": "Who is widely considered the National Hero of the Philippines?",
+      "choices": [
+        "Dr. Jose Rizal",
+        "Andres Bonifacio",
+        "Emilio Aguinaldo",
+        "Apolinario Mabini"
+      ],
+      "explain": "Dr. Jose Rizal is widely regarded as the national hero."
+    },
+    {
+      "id": "e5",
+      "subject": "Grammar",
+      "difficulty": "easy",
+      "q": "What punctuation mark is used at the end of a question?",
+      "choices": [
+        "Question mark",
+        "Comma",
+        "Exclamation point",
+        "Period"
+      ],
+      "explain": "Questions end with a question mark (?)."
+    },
+    {
+      "id": "e6",
+      "subject": "Biology",
+      "difficulty": "easy",
+      "q": "What do herbivores primarily eat?",
+      "choices": [
+        "Plants",
+        "Meat",
+        "Insects",
+        "Fungi"
+      ],
+      "explain": "Herbivores feed primarily on plants."
+    },
+    {
+      "id": "m1",
+      "subject": "Physics",
+      "difficulty": "medium",
+      "q": "What invisible force keeps planets in orbit around the sun?",
+      "choices": [
+        "Gravity",
+        "Magnetism",
+        "Friction",
+        "Inertia"
+      ],
+      "explain": "Gravity holds planets in their orbits."
+    },
+    {
+      "id": "m2",
+      "subject": "Math",
+      "difficulty": "medium",
+      "q": "What is the value of Pi rounded to two decimal places?",
+      "choices": [
+        "3.14",
+        "3.12",
+        "3.16",
+        "3.18"
+      ],
+      "explain": "Pi rounds to 3.14."
+    },
+    {
+      "id": "m3",
+      "subject": "History",
+      "difficulty": "medium",
+      "q": "Who was the first President of the Philippine Republic?",
+      "choices": [
+        "Emilio Aguinaldo",
+        "Manuel L. Quezon",
+        "Jose P. Laurel",
+        "Sergio Osmena"
+      ],
+      "explain": "Emilio Aguinaldo led the First Philippine Republic."
+    },
+    {
+      "id": "m4",
+      "subject": "Literature",
+      "difficulty": "medium",
+      "q": "Who is the renowned Filipino poet that wrote the epic “Florante at Laura”?",
+      "choices": [
+        "Francisco Balagtas",
+        "Jose Rizal",
+        "Nick Joaquin",
+        "Lualhati Bautista"
+      ],
+      "explain": "Francisco Balagtas wrote Florante at Laura."
+    },
+    {
+      "id": "m5",
+      "subject": "Geography",
+      "difficulty": "medium",
+      "q": "What is the highest mountain above sea level on Earth?",
+      "choices": [
+        "Mount Everest",
+        "K2",
+        "Mount Kilimanjaro",
+        "Mount Fuji"
+      ],
+      "explain": "Mount Everest is the highest above sea level."
+    },
+    {
+      "id": "m6",
+      "subject": "Biology",
+      "difficulty": "medium",
+      "q": "What part of a plant is primarily responsible for conducting photosynthesis?",
+      "choices": [
+        "The leaf (or leaves)",
+        "The root",
+        "The stem",
+        "The flower"
+      ],
+      "explain": "Photosynthesis occurs mainly in the leaves."
+    },
+    {
+      "id": "m7",
+      "subject": "Grammar",
+      "difficulty": "medium",
+      "q": "What part of speech is used to describe a noun?",
+      "choices": [
+        "Adjective",
+        "Adverb",
+        "Verb",
+        "Pronoun"
+      ],
+      "explain": "Adjectives describe or modify nouns."
+    },
+    {
+      "id": "m8",
+      "subject": "Chemistry",
+      "difficulty": "medium",
+      "q": "What two elements make up a molecule of water?",
+      "choices": [
+        "Hydrogen and Oxygen",
+        "Carbon and Oxygen",
+        "Nitrogen and Hydrogen",
+        "Helium and Oxygen"
+      ],
+      "explain": "Water is H2O: hydrogen and oxygen."
+    },
+    {
+      "id": "h1",
+      "subject": "Chemistry",
+      "difficulty": "hard",
+      "q": "What is the atomic number of Carbon?",
+      "choices": [
+        "6",
+        "4",
+        "8",
+        "12"
+      ],
+      "explain": "Carbon's atomic number is 6."
+    },
+    {
+      "id": "h2",
+      "subject": "Literature",
+      "difficulty": "hard",
+      "q": "What is the literary term for a direct comparison between two things using “like” or “as”?",
+      "choices": [
+        "Simile",
+        "Metaphor",
+        "Personification",
+        "Hyperbole"
+      ],
+      "explain": "A simile compares using 'like' or 'as'."
+    },
+    {
+      "id": "h3",
+      "subject": "History",
+      "difficulty": "hard",
+      "q": "Who was the revolutionary leader famously known as the “Brains of the Katipunan”?",
+      "choices": [
+        "Emilio Jacinto",
+        "Apolinario Mabini",
+        "Antonio Luna",
+        "Andres Bonifacio"
+      ],
+      "explain": "Emilio Jacinto was the Brains of the Katipunan."
+    },
+    {
+      "id": "h4",
+      "subject": "Biology",
+      "difficulty": "hard",
+      "q": "What molecule carries the genetic instructions for life in almost all living organisms?",
+      "choices": [
+        "DNA (Deoxyribonucleic acid)",
+        "RNA",
+        "ATP",
+        "Protein"
+      ],
+      "explain": "DNA stores genetic instructions."
+    },
+    {
+      "id": "h5",
+      "subject": "Physics",
+      "difficulty": "hard",
+      "q": "Which physicist is famous for developing the theory of general relativity?",
+      "choices": [
+        "Albert Einstein",
+        "Isaac Newton",
+        "Nikola Tesla",
+        "Stephen Hawking"
+      ],
+      "explain": "Einstein developed general relativity."
+    },
+    {
+      "id": "h6",
+      "subject": "Economics",
+      "difficulty": "hard",
+      "q": "What economic metric represents the total value of all goods and services produced in a country during one year?",
+      "choices": [
+        "GDP (Gross Domestic Product)",
+        "GNP (Gross National Product)",
+        "CPI (Consumer Price Index)",
+        "Inflation Rate"
+      ],
+      "explain": "GDP measures yearly domestic output."
+    },
+    {
+      "id": "h7",
+      "subject": "Earth Science",
+      "difficulty": "hard",
+      "q": "What is the name of the boundary where two tectonic plates collide?",
+      "choices": [
+        "Convergent boundary",
+        "Divergent boundary",
+        "Transform boundary",
+        "Fault line"
+      ],
+      "explain": "Colliding plates form a convergent boundary."
+    },
+    {
+      "id": "h8",
+      "subject": "Math",
+      "difficulty": "hard",
+      "q": "In a right triangle, what is the term for the longest side opposite the right angle?",
+      "choices": [
+        "Hypotenuse",
+        "Adjacent",
+        "Opposite",
+        "Vertex"
+      ],
+      "explain": "The hypotenuse is opposite the right angle."
+    },
+    {
+      "id": "h9",
+      "subject": "Civics",
+      "difficulty": "hard",
+      "q": "What are the three co-equal branches of the Philippine government?",
+      "choices": [
+        "Executive, Legislative, and Judicial",
+        "Local, National, and International",
+        "Presidential, Senatorial, and Congressional",
+        "Military, Civilian, and Religious"
+      ],
+      "explain": "The three branches are Executive, Legislative, Judicial."
+    },
+    {
+      "id": "h10",
+      "subject": "Astronomy",
+      "difficulty": "hard",
+      "q": "What is the term for a star that suddenly increases greatly in brightness because of a catastrophic explosion?",
+      "choices": [
+        "Supernova",
+        "Black hole",
+        "Nebula",
+        "Pulsar"
+      ],
+      "explain": "A supernova is an exploding star."
+    },
+    {
+      "id": "h11",
+      "subject": "Art History",
+      "difficulty": "hard",
+      "q": "While most famous for the Spoliarium, which Filipino master painter also created the 1892 masterpiece “The Parisian Life”?",
+      "choices": [
+        "Juan Luna",
+        "Felix Resurreccion Hidalgo",
+        "Fernando Amorsolo",
+        "Vicente Manansala"
+      ],
+      "explain": "Juan Luna painted The Parisian Life (1892)."
+    },
+    {
+      "id": "h12",
+      "subject": "Anatomy",
+      "difficulty": "hard",
+      "q": "What is the medical term for the voice box in human anatomy?",
+      "choices": [
+        "Larynx",
+        "Pharynx",
+        "Trachea",
+        "Esophagus"
+      ],
+      "explain": "The larynx is the voice box."
+    }
   ]
 }

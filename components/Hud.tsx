@@ -13,6 +13,8 @@ export default function Hud({ game }: { game: Game }) {
       <div className="hud-grid">
         <div>
           <div className="hud-label">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/ui/icon_health.png" alt="" className="hud-icon" />
             HP {Math.ceil(game.hp)}/{cfg.resources.hp_max}
           </div>
           <div className="bar hp">
@@ -21,6 +23,8 @@ export default function Hud({ game }: { game: Game }) {
         </div>
         <div>
           <div className="hud-label">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/ui/icon_energy.png" alt="" className="hud-icon" />
             Energy {Math.ceil(game.energy)}/{cfg.resources.energy_max}
           </div>
           <div className="bar energy">
@@ -29,6 +33,8 @@ export default function Hud({ game }: { game: Game }) {
         </div>
         <div>
           <div className="hud-label">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/ui/icon_time.png" alt="" className="hud-icon" />
             Time {min}:{sec.toString().padStart(2, "0")}
           </div>
           <div className="bar time">

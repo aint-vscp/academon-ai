@@ -6,7 +6,7 @@
 // "What will you do?" (FIGHT / RUN) → "QUESTION N" + 2×2 choices.
 
 import { tierLabel, type Game } from "@/engine/game";
-import { getHeroVariant, getSprite } from "@/lib/sprites";
+import { getHeroVariant, getMobSprite } from "@/lib/sprites";
 import { useEffect, useRef, useState } from "react";
 
 export interface BattleApi {
@@ -50,8 +50,6 @@ export default function BattleScene({
   const [mobAnim, setMobAnim] = useState("battle-walk-in");
   const [animKey, setAnimKey] = useState(0);
   const [locked, setLocked] = useState(false);
-  const [qNo, setQNo] = useState(0);
-  const prevStage = useRef(b.stage);
   const prevMob = useRef(b.mobId);
 
   // paint the mob sprite (registry: PNG drop-in or procedural fallback).
@@ -63,9 +61,7 @@ export default function BattleScene({
     const g = cv.getContext("2d")!;
     g.imageSmoothingEnabled = false;
     g.clearRect(0, 0, cv.width, cv.height);
-    const spr = getSprite(
-      mob.tier === "slime" ? "mob_slime" : mob.tier === "goblin" ? "mob_goblin" : "mob_wraith"
-    );
+    const spr = getMobSprite(mob.tier, game.theme);
     // letterbox to preserve the sprite's aspect ratio
     const sw = spr.width || 16;
     const sh = spr.height || 16;
@@ -73,25 +69,16 @@ export default function BattleScene({
     const dw = sw * k;
     const dh = sh * k;
     g.drawImage(spr, (cv.width - dw) / 2, cv.height - dh, dw, dh);
-  }, [mob, mob?.tier, animKey]);
+  }, [mob, mob?.tier, game.theme, animKey]);
 
-  // new mob → reset the per-battle question counter
+  // new mob → reset transient battle UI state
   useEffect(() => {
     if (b.mobId !== prevMob.current) {
       prevMob.current = b.mobId;
-      setQNo(0);
       setFeedback(null);
       setLocked(false);
     }
   }, [b.mobId]);
-
-  // FIGHT chosen → next question number
-  useEffect(() => {
-    if (prevStage.current !== b.stage) {
-      if (b.stage === "question") setQNo((n) => n + 1);
-      prevStage.current = b.stage;
-    }
-  }, [b.stage]);
 
   const fight = () => {
     if (locked || b.stage !== "choice") return;
@@ -139,7 +126,8 @@ export default function BattleScene({
 
   const v = getHeroVariant();
   const hpFrac = game.hp / game.cfg.resources.hp_max;
-  const mobFrac = mob ? mob.hitsLeft / game.cfg.mobs[mob.tier].hits : 0;
+  const totalHits = mob ? game.cfg.mobs[mob.tier].hits : 1;
+  const mobFrac = mob ? mob.hitsLeft / totalHits : 0;
   const timerPct = (game.questionTimer / game.cfg.mapgen.question_timer_sec) * 100;
   const eF = Number.isFinite(b.eFight) ? b.eFight.toFixed(0) : "∞";
   const eR = Number.isFinite(b.eRetreat) ? b.eRetreat.toFixed(0) : "∞";
@@ -221,7 +209,10 @@ export default function BattleScene({
         ) : (
           <div className="battle-qa">
             <div className="q-left">
-              <div className="q-head">QUESTION {qNo || 1}</div>
+              <div className="q-head">
+                {totalHits > 1 ? `ROUND ${b.questionNo} / ${totalHits}` : "QUESTION"}
+                {b.setLabel ? <span className="q-set"> · {b.setLabel}</span> : null}
+              </div>
               <div className="q-text">{b.question.q}</div>
               <div className="qtimer">
                 <i style={{ width: `${timerPct}%` }} />

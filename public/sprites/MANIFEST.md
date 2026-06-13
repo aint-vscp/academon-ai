@@ -25,37 +25,57 @@ pixel placeholders automatically at load time.
 | `terrain_bush.png` | bush (walkable, +energy cost 5) |
 | `terrain_boulder.png` | boulder (impassable) |
 | `hero.png` | AcadéMon — the scholar hero |
-| `mob_slime.png` | Pop-Quiz Slime (easy, 1 hit) |
-| `mob_goblin.png` | Quiz Goblin (medium, 2 hits) |
-| `mob_wraith.png` | Essay Wraith (hard, 3 hits) |
-| `item_medkit.png` | Med Kit (+45 HP) |
-| `item_energydrink.png` | Energy Drink (+50 energy) |
+| `mob_slime.png` | Pop-Quiz Slime (easy, 1 hit) — flat fallback |
+| `mob_goblin.png` | Quiz Goblin (medium, 2 hits) — flat fallback |
+| `mob_wraith.png` | Essay Wraith / "Ghost" (hard, 3 hits) — flat fallback |
+| `mob_<tier>_<theme>.png` | per-theme mob art; `tier` = slime/goblin/wraith, `theme` = nature/water/fire. Falls back to the flat `mob_<tier>.png`. |
+| `item_medkit.png` | Med Kit / Health (+45 HP) |
+| `item_energydrink.png` | Energy Drink / Potion (+50 energy) |
 | `item_timecharm.png` | Time Charm (+20 s) |
 | `goal_building.png` | the randomized goal building |
+
+`getMobSprite(tier, theme)` in `lib/sprites.ts` resolves the 9 per-theme mob
+PNGs (`mob_slime_nature`, `mob_goblin_water`, `mob_wraith_fire`, …) and falls
+back to the flat sprite when a themed file is missing.
 
 ## Themed tilesets — `public/ui/tiles/` (ACTIVE, overrides this folder)
 
 `lib/tiles.ts` renders the map with the themed tileset below **before** falling
 back to `public/sprites/terrain_*.png` or procedural colors. Tiles are 64×64,
-full-bleed (no alpha). Round 1/3 = **nature** theme, round 2 = **water**.
+full-bleed (no alpha). Round 1 = **nature**, round 2 = **water**, round 3 = **fire**.
 
 | File | Used as |
 |---|---|
-| `path_straight.png` | N–S walkway (auto-rotated for E–W) |
-| `path_turn.png` | N–E corner (auto-rotated ×4) |
-| `path_tee.png` | N+E+W tee (auto-rotated ×4; 4-way cross synthesized) |
+| `path_straight/turn/tee.png` | nature path autotile (rotated + cross synthesized) |
+| `fire_straight/turn/tee.png` | fire path autotile (same logic) |
 | `grass1.png` / `grass2.png` | grass field variants (hash-picked) |
 | `grass_detail.png` | sprinkled decoration overlay (alpha) |
 | `bush1.png` / `bush2.png` | bush variants (walkable, +5 EP) |
 | `mud1.png` / `mud2.png` / `mud3.png` | mud variants |
-| `wall1.png` | nature wall (impassable) |
+| `wall1.png` | nature wall (border); interior walls render as trees |
+| `tree1..tree4.png` | tree cluster decals on interior nature walls (alpha) |
 | `boulder.png` + `stones.png` | boulder (impassable) + detail overlay |
-| `water.png` | water-theme base tile (replaces path/grass) |
-| `lily1.png` / `lily2.png` | water theme: mud→plain pad, bush→flowered pad |
+| `water.png` | water theme: shallow water (mud-like, mid cost) + deep tint |
+| `path_water.png` | water theme corridor (path) |
+| `lily1.png` / `lily2.png` | water theme walkable base (grass-like) |
 | `water_boulder1.png` / `water_boulder2.png` | water theme boulders |
 | `wall2.png` | water theme wall |
+| `fire_grass.png` + `fire_grass_detail.png` | fire theme ground (grass-like) + detail |
+| `fire_mud.png` | fire theme mud-like terrain (also tinted as lava for blocking water) |
+| `fire_bush.png` | fire theme bush overlay (alpha) |
 
-Water ponds get a dark overlay tint; missing files fall back per-tile.
+Water ponds and fire walls/boulders/lava get a tint overlay; fire reuses
+nature's `wall1`/`boulder` warmed with a scorched cast (no dedicated fire art).
+Missing files fall back per-tile.
+
+## Reward badges & HUD icons — `public/ui/`
+
+| File | Used as |
+|---|---|
+| `badge_nature.png` | Level 1 reward (Certificate) — round-clear + congrats + reward |
+| `badge_water.png` | Level 2 reward (Trophy) |
+| `badge_fire.png` | Level 3 reward (Pylon Torch) |
+| `icon_health/energy/time/goal.png` | small HUD label icons |
 
 ## Hero walk cycles — `public/ui/hero/` (ACTIVE)
 
@@ -71,8 +91,8 @@ Water ponds get a dark overlay tint; missing files fall back per-tile.
 Drop replacement frames with the same names — alpha-trimmed, ≤192 px tall.
 `front` frames also serve as the character-select portraits.
 
-## Planned (full-PNG maps later)
+## Re-skinning further
 
-When Level 3 art is ready, add a third theme block to `lib/tiles.ts`
-(`THEMES` map) — the engine's terrain grid stays unchanged. Round 3 currently
-reuses the nature tileset.
+All three theme blocks live in `lib/tiles.ts` (`drawTerrainTile`); the engine's
+terrain grid stays unchanged across themes. Per-theme mobs resolve through
+`getMobSprite(tier, theme)` in `lib/sprites.ts`.

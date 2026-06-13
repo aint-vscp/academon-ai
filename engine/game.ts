@@ -4,7 +4,7 @@
 import { accuracy, bandFor, eFight, eRetreat, kappaT, type Band } from "./economy";
 import { itemAt, manhattan, mobAt, sameVec, terrainAt } from "./grid";
 import { generateMap, quadrantOf } from "./mapgen";
-import { QuestionBank, tierDifficulty } from "./quiz";
+import { EncounterDeck, QuestionBank, tierDifficulty } from "./quiz";
 import { mulberry32, type Rng } from "./rng";
 import {
   bestItemDetour,
@@ -20,6 +20,7 @@ import type {
   AgentKind,
   BattleState,
   Config,
+  EncounterSet,
   FailReason,
   GameEvent,
   GameMode,
@@ -39,6 +40,8 @@ export interface GameOptions {
   agentKind?: AgentKind;
   /** Previous run's goal quadrant — anti-repeat rule (§II check 2). */
   avoidQuadrant?: number;
+  /** Sequential encounter sets for Goblin/Ghost fights (§VII). Omit in headless sim. */
+  sets?: EncounterSet[];
 }
 
 export class Game {
@@ -72,6 +75,11 @@ export class Game {
 
   battle: BattleState | null = null;
   private bank: QuestionBank;
+  private deck: EncounterDeck | null;
+  /** Rounds of the active fight's encounter set (one question per hit). */
+  private encRounds: Question[] = [];
+  private encIdx = 0;
+  private encLabel = "";
 
   answered = 0;
   correct = 0;
@@ -84,6 +92,8 @@ export class Game {
   steps = 0;
   followed = 0;
   defied = 0;
+  /** Cumulative energy points consumed this session (steps + attacks), carries across rounds. */
+  energySpent = 0;
 
   band: Band;
   events: GameEvent[] = [];
@@ -102,6 +112,7 @@ export class Game {
     this.baseSeed = opts.seed;
     this.map = generateMap(cfg, opts.seed, opts.mode, opts.avoidQuadrant ?? -1);
     this.bank = new QuestionBank(questions, this.rng);
+    this.deck = opts.sets && opts.sets.length ? new EncounterDeck(opts.sets, this.rng) : null;
     this.hp = cfg.resources.hp_max;
     this.energy = cfg.resources.energy_max;
     this.timeLeft = cfg.modes[opts.mode].time_limit;
@@ -120,14 +131,15 @@ export class Game {
     return this.baseSeed;
   }
 
-  /** Visual theme of the current round: L1 Nature, L2 Water, L3 pending assets → Nature. */
+  /** Visual theme of the current round: L1 Nature, L2 Water, L3 Fire. */
   get theme(): MapTheme {
-    return this.round === 2 ? "water" : "nature";
+    return this.round === 2 ? "water" : this.round >= 3 ? "fire" : "nature";
   }
 
   /** Transition-card label for the current round. */
   get levelLabel(): string {
-    return `LEVEL ${this.round}: ${this.theme === "water" ? "WATER" : "NATURE"}`;
+    const t = this.theme;
+    return `LEVEL ${this.round}: ${t === "water" ? "WATER" : t === "fire" ? "FIRE" : "NATURE"}`;
   }
 
   get p(): number {
@@ -234,7 +246,9 @@ export class Game {
     this.pos = { ...next };
     this.steps++;
     const t = terrainAt(this.map, next.x, next.y);
-    this.energy -= terrainEnergy(this.cfg, t);
+    const stepCost = terrainEnergy(this.cfg, t);
+    this.energy -= stepCost;
+    this.energySpent += stepCost;
     this.sample(this.pendingReplanFlag);
     this.pendingReplanFlag = false;
     if (this.energy <= 0) {
@@ -384,9 +398,35 @@ export class Game {
 
   // ---------- battle ----------
 
+  /** Set up a fresh fight: a coherent encounter set (Goblin/Ghost when a deck is
+   * present) asked one round per hit, or per-hit singles for Slime/ambush/headless sim. */
+  private prepareEncounter(mob: Mob) {
+    const diff = tierDifficulty(mob.tier);
+    this.encIdx = 0;
+    if ((diff === "medium" || diff === "hard") && this.deck?.has(diff)) {
+      const set = this.deck.draw(diff);
+      if (set) {
+        this.encRounds = set.rounds;
+        this.encLabel = set.label;
+        return;
+      }
+    }
+    this.encRounds = [];
+    this.encLabel = "";
+  }
+
+  /** Question for the current hit: the active set's round, else a fresh single by difficulty. */
+  private hitQuestion(mob: Mob): Question {
+    if (this.encRounds.length) {
+      return this.encRounds[Math.min(this.encIdx, this.encRounds.length - 1)];
+    }
+    return this.bank.draw(tierDifficulty(mob.tier));
+  }
+
   private startBattle(mob: Mob, ambush: boolean) {
     this.fights++;
-    const q = this.bank.draw(tierDifficulty(mob.tier));
+    this.prepareEncounter(mob);
+    const q = this.hitQuestion(mob);
     const { choices, correctIndex } = this.bank.shuffleChoices(q);
 
     // E[fight] vs E[retreat] — §VI
@@ -431,6 +471,8 @@ export class Game {
       question: q,
       shuffledChoices: choices,
       correctIndex,
+      questionNo: 1,
+      setLabel: this.encLabel,
       eFight: fight,
       eRetreat: retreat,
       recommendation,
@@ -467,6 +509,7 @@ export class Game {
 
     // every answer costs attack energy — §III
     this.energy -= this.cfg.costs.attack_energy;
+    this.energySpent += this.cfg.costs.attack_energy;
     this.answered++;
 
     if (correct) {
@@ -491,8 +534,9 @@ export class Game {
         this.replan("Mob defeated — recomputing route", true); // §IX trigger 6
         return;
       }
-      // next round vs multi-hit mob — back to the FIGHT/RUN choice
-      const q = this.bank.draw(tierDifficulty(mob.tier));
+      // next hit vs multi-hit mob — advance to the set's next round, back to FIGHT/RUN choice
+      this.encIdx++;
+      const q = this.hitQuestion(mob);
       const { choices, correctIndex } = this.bank.shuffleChoices(q);
       this.battle = {
         ...this.battle,
@@ -500,6 +544,7 @@ export class Game {
         question: q,
         shuffledChoices: choices,
         correctIndex,
+        questionNo: this.battle.questionNo + 1,
         questionStartedAt: this.elapsed,
       };
     } else {
@@ -519,8 +564,8 @@ export class Game {
         this.energy = 0;
         return this.gameOver("OUT OF ENERGY");
       }
-      // mob persists; fresh question; player can retreat — §VII
-      const q = this.bank.draw(tierDifficulty(mob.tier));
+      // mob persists; same hit must be re-attempted; player can retreat — §VII
+      const q = this.hitQuestion(mob);
       const { choices, correctIndex } = this.bank.shuffleChoices(q);
       const fight = eFight(this.cfg, mob.tier, this.p, this.hp, this.timeLimit);
       this.battle = {
@@ -602,6 +647,7 @@ export class Game {
     this.moveProgress = 0;
     this.battle = null;
     this.timeLeft = this.cfg.modes[this.mode].time_limit; // fresh round clock
+    this.energy = this.cfg.resources.energy_max; // fresh stamina per level (HP carries over)
     this.detourItemId = null;
     this.phase = "running";
     this.replan(`Round ${this.round} — heading to ${this.map.goalName}`);

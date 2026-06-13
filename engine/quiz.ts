@@ -1,7 +1,7 @@
 // Question bank: tagged, no-repeat (used-id set), shuffled choices — §VII.
 
 import { shuffled, type Rng } from "./rng";
-import type { Question } from "./types";
+import type { EncounterSet, Question } from "./types";
 
 export class QuestionBank {
   private byDifficulty: Record<string, Question[]> = {};
@@ -48,4 +48,36 @@ export class QuestionBank {
 
 export function tierDifficulty(tier: "slime" | "goblin" | "wraith") {
   return tier === "slime" ? "easy" : tier === "goblin" ? "medium" : "hard";
+}
+
+/**
+ * Sequential encounter sets for multi-hit mobs (§VII). A Goblin/Ghost fight
+ * draws ONE set and asks its rounds in order, one per hit — keeping the two/three
+ * questions thematically coherent rather than random per hit. No-repeat until the
+ * difficulty pool is exhausted, then the used set is recycled.
+ */
+export class EncounterDeck {
+  private byDifficulty: Record<string, EncounterSet[]> = {};
+  private used = new Set<string>();
+
+  constructor(sets: EncounterSet[], private rng: Rng) {
+    for (const s of sets) (this.byDifficulty[s.difficulty] ??= []).push(s);
+  }
+
+  has(difficulty: "medium" | "hard"): boolean {
+    return (this.byDifficulty[difficulty]?.length ?? 0) > 0;
+  }
+
+  draw(difficulty: "medium" | "hard"): EncounterSet | null {
+    const all = this.byDifficulty[difficulty] ?? [];
+    if (!all.length) return null;
+    let pool = all.filter((s) => !this.used.has(s.id));
+    if (!pool.length) {
+      for (const s of all) this.used.delete(s.id);
+      pool = all;
+    }
+    const set = pool[Math.floor(this.rng() * pool.length)];
+    this.used.add(set.id);
+    return set;
+  }
 }

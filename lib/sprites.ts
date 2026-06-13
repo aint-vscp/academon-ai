@@ -21,6 +21,15 @@ export type SpriteName =
   | "mob_slime"
   | "mob_goblin"
   | "mob_wraith"
+  | "mob_slime_nature"
+  | "mob_slime_water"
+  | "mob_slime_fire"
+  | "mob_goblin_nature"
+  | "mob_goblin_water"
+  | "mob_goblin_fire"
+  | "mob_wraith_nature"
+  | "mob_wraith_water"
+  | "mob_wraith_fire"
   | "item_medkit"
   | "item_energydrink"
   | "item_timecharm"
@@ -39,6 +48,15 @@ export const SPRITE_NAMES: SpriteName[] = [
   "mob_slime",
   "mob_goblin",
   "mob_wraith",
+  "mob_slime_nature",
+  "mob_slime_water",
+  "mob_slime_fire",
+  "mob_goblin_nature",
+  "mob_goblin_water",
+  "mob_goblin_fire",
+  "mob_wraith_nature",
+  "mob_wraith_water",
+  "mob_wraith_fire",
   "item_medkit",
   "item_energydrink",
   "item_timecharm",
@@ -77,6 +95,50 @@ function paint(draw: (px: (x: number, y: number, w: number, h: number, c: string
   };
   draw(px);
   return c;
+}
+
+function paintSlime(): HTMLCanvasElement {
+  return paint((px) => {
+    px(3, 7, 10, 6, "#42a5f5");
+    px(2, 9, 12, 4, "#42a5f5");
+    px(4, 5, 8, 3, "#64b5f6");
+    px(5, 8, 2, 2, "#0d2c4f");
+    px(9, 8, 2, 2, "#0d2c4f");
+    px(7, 11, 2, 1, "#0d2c4f");
+    px(4, 6, 2, 1, "#bbdefb");
+  });
+}
+
+function paintGoblin(): HTMLCanvasElement {
+  return paint((px) => {
+    px(5, 3, 6, 5, "#43a047"); // head
+    px(2, 3, 3, 2, "#43a047"); // ears
+    px(11, 3, 3, 2, "#43a047");
+    px(6, 5, 1, 1, "#ff1744");
+    px(9, 5, 1, 1, "#ff1744");
+    px(6, 7, 4, 1, "#1b5e20");
+    px(5, 8, 6, 5, "#2e7d32"); // body
+    px(3, 9, 2, 3, "#43a047");
+    px(11, 9, 2, 3, "#43a047");
+    px(5, 13, 2, 2, "#1b5e20");
+    px(9, 13, 2, 2, "#1b5e20");
+    px(12, 7, 2, 4, "#8d6e63"); // little quiz scroll
+  });
+}
+
+function paintWraith(): HTMLCanvasElement {
+  return paint((px) => {
+    px(4, 2, 8, 9, "#6a1b9a");
+    px(3, 5, 10, 6, "#6a1b9a");
+    px(5, 11, 2, 3, "#4a148c");
+    px(8, 11, 2, 2, "#4a148c");
+    px(11, 11, 1, 3, "#4a148c");
+    px(5, 5, 2, 2, "#e1bee7"); // hollow glowing eyes
+    px(9, 5, 2, 2, "#e1bee7");
+    px(6, 9, 4, 1, "#4a148c");
+    px(2, 3, 1, 4, "#9c4dcc");
+    px(13, 3, 1, 4, "#9c4dcc");
+  });
 }
 
 const placeholders: Record<SpriteName, () => HTMLCanvasElement> = {
@@ -184,44 +246,18 @@ const placeholders: Record<SpriteName, () => HTMLCanvasElement> = {
       px(4, 14, 3, 1, "#e8e8e8"); // shoes
       px(9, 14, 3, 1, "#e8e8e8");
     }),
-  mob_slime: () =>
-    paint((px) => {
-      px(3, 7, 10, 6, "#42a5f5");
-      px(2, 9, 12, 4, "#42a5f5");
-      px(4, 5, 8, 3, "#64b5f6");
-      px(5, 8, 2, 2, "#0d2c4f");
-      px(9, 8, 2, 2, "#0d2c4f");
-      px(7, 11, 2, 1, "#0d2c4f");
-      px(4, 6, 2, 1, "#bbdefb");
-    }),
-  mob_goblin: () =>
-    paint((px) => {
-      px(5, 3, 6, 5, "#43a047"); // head
-      px(2, 3, 3, 2, "#43a047"); // ears
-      px(11, 3, 3, 2, "#43a047");
-      px(6, 5, 1, 1, "#ff1744");
-      px(9, 5, 1, 1, "#ff1744");
-      px(6, 7, 4, 1, "#1b5e20");
-      px(5, 8, 6, 5, "#2e7d32"); // body
-      px(3, 9, 2, 3, "#43a047");
-      px(11, 9, 2, 3, "#43a047");
-      px(5, 13, 2, 2, "#1b5e20");
-      px(9, 13, 2, 2, "#1b5e20");
-      px(12, 7, 2, 4, "#8d6e63"); // little quiz scroll
-    }),
-  mob_wraith: () =>
-    paint((px) => {
-      px(4, 2, 8, 9, "#6a1b9a");
-      px(3, 5, 10, 6, "#6a1b9a");
-      px(5, 11, 2, 3, "#4a148c");
-      px(8, 11, 2, 2, "#4a148c");
-      px(11, 11, 1, 3, "#4a148c");
-      px(5, 5, 2, 2, "#e1bee7"); // hollow glowing eyes
-      px(9, 5, 2, 2, "#e1bee7");
-      px(6, 9, 4, 1, "#4a148c");
-      px(2, 3, 1, 4, "#9c4dcc");
-      px(13, 3, 1, 4, "#9c4dcc");
-    }),
+  mob_slime: paintSlime,
+  mob_goblin: paintGoblin,
+  mob_wraith: paintWraith,
+  mob_slime_nature: paintSlime,
+  mob_slime_water: paintSlime,
+  mob_slime_fire: paintSlime,
+  mob_goblin_nature: paintGoblin,
+  mob_goblin_water: paintGoblin,
+  mob_goblin_fire: paintGoblin,
+  mob_wraith_nature: paintWraith,
+  mob_wraith_water: paintWraith,
+  mob_wraith_fire: paintWraith,
   item_medkit: () =>
     paint((px) => {
       px(2, 4, 12, 9, "#fafafa");
@@ -289,4 +325,24 @@ export function getSprite(name: SpriteName): Drawable {
 /** Kick off PNG probing for everything (call once at game mount). */
 export function preloadSprites() {
   for (const n of SPRITE_NAMES) getSprite(n);
+}
+
+/** Per-theme mob art: tries mob_<tier>_<theme>.png, falls back to the flat mob sprite. */
+export function getMobSprite(
+  tier: "slime" | "goblin" | "wraith",
+  theme: "nature" | "water" | "fire"
+): Drawable {
+  const themed = `mob_${tier}_${theme}` as SpriteName;
+  const flat = `mob_${tier}` as SpriteName;
+  const cached = cache.get(themed);
+  if (cached) return cached;
+  // seed the themed cache from the flat sprite so it never flashes empty,
+  // then async-upgrade to the themed PNG when it loads.
+  const seed = getSprite(flat);
+  cache.set(themed, seed);
+  const img = new Image();
+  img.onload = () => cache.set(themed, img);
+  img.onerror = () => {}; // keep the flat fallback
+  img.src = `/sprites/${themed}.png`;
+  return cache.get(themed) ?? seed;
 }

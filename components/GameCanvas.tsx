@@ -5,7 +5,7 @@
 
 import { useEffect, useRef } from "react";
 import type { Game } from "@/engine/game";
-import { getHeroVariant, getSprite, type SpriteName } from "@/lib/sprites";
+import { getHeroVariant, getMobSprite, getSprite, type SpriteName } from "@/lib/sprites";
 import { drawTerrainTile, preloadTiles } from "@/lib/tiles";
 import { getHeroFrame, preloadHeroFrames, type Facing } from "@/lib/heroFrames";
 
@@ -149,9 +149,7 @@ export function drawGame(ctx: CanvasRenderingContext2D, game: Game, showGhost: b
   // mobs
   for (const mob of m.mobs) {
     if (mob.defeated) continue;
-    const s: SpriteName =
-      mob.tier === "slime" ? "mob_slime" : mob.tier === "goblin" ? "mob_goblin" : "mob_wraith";
-    drawFit(ctx, getSprite(s), mob.pos.x * TILE + 2, mob.pos.y * TILE + 2, TILE - 4, TILE - 4, "bottom");
+    drawFit(ctx, getMobSprite(mob.tier, game.theme), mob.pos.x * TILE + 2, mob.pos.y * TILE + 2, TILE - 4, TILE - 4, "bottom");
     if (mob.gatekeeper) {
       ctx.fillStyle = "#ffd54f";
       ctx.fillText("!", mob.pos.x * TILE + TILE / 2, mob.pos.y * TILE);

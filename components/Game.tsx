@@ -7,18 +7,24 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Game } from "@/engine/game";
 import { quadrantOf } from "@/engine/mapgen";
-import type { Config, GameMode, Question } from "@/engine/types";
-import configJson from "@/data/config.json";
-import questionsJson from "@/data/questions.json";
 import GameCanvas from "./GameCanvas";
 import Hud from "./Hud";
 import BattleScene, { type BattleApi } from "./BattleScene";
 import IrisTransition from "./IrisTransition";
 import StartFlow, { type StartChoice } from "./StartFlow";
 import { preloadSprites, setHeroVariant } from "@/lib/sprites";
+import RewardEnding from "./RewardEnding";
+import type { Config, EncounterSet, GameMode, Question } from "@/engine/types";
+import configJson from "@/data/config.json";
+import questionsJson from "@/data/questions.json";
+import encountersJson from "@/data/encounters.json";
 
 const cfg = configJson as unknown as Config;
 const banks = questionsJson as unknown as Record<string, Question[]>;
+const encounterSets = encountersJson as unknown as EncounterSet[];
+
+/** Reward badge per cleared level (Certificate → Trophy → Pylon Torch). */
+const BADGE_BY_ROUND = ["/ui/badge_nature.png", "/ui/badge_water.png", "/ui/badge_fire.png"];
 
 interface LeaderEntry {
   name: string;
@@ -45,6 +51,12 @@ export interface PlayRecord {
   replans: number;
   elapsed: number;
   roundsCleared: number;
+  /** Final HP at game end (0–100). */
+  finalHp: number;
+  /** Final energy reserve at game end (0–100). */
+  finalEnergy: number;
+  /** Cumulative energy points consumed across the whole session (steps + attacks). */
+  energyCost: number;
 }
 
 /** Post-game taglines by share of questions answered correctly. */
@@ -100,6 +112,9 @@ function recordPlay(game: Game, name: string, hero: "isko" | "iska") {
       replans: game.replans,
       elapsed: game.elapsed,
       roundsCleared: game.roundsCleared,
+      finalHp: Math.max(0, Math.round(game.hp)),
+      finalEnergy: Math.max(0, Math.round(game.energy)),
+      energyCost: Math.round(game.energySpent),
     });
     localStorage.setItem("academon-plays", JSON.stringify(plays.slice(-100)));
   } catch {}
@@ -131,6 +146,7 @@ export default function GameRoot() {
   const [trans, setTrans] = useState<TransSpec | null>(null);
   const transRef = useRef(false);
   const [showStats, setShowStats] = useState(false);
+  const [showReward, setShowReward] = useState(false);
 
   const startTrans = useCallback((label: string, color: string, mid: () => void) => {
     transRef.current = true;
@@ -150,11 +166,13 @@ export default function GameRoot() {
         seed: nextSeed(m),
         algo: "astar",
         avoidQuadrant: prevQuad,
+        sets: encounterSets,
       });
       localStorage.setItem("academon-last-quadrant", String(quadrantOf(game.map, game.map.goal)));
       gameRef.current = game;
       endSavedRef.current = false;
       setShowStats(false);
+      setShowReward(false);
       toastsSince.current = 0;
       setToasts([]);
       // iris in over the title, reveal Level 1 behind the curtain
@@ -173,14 +191,12 @@ export default function GameRoot() {
       if (transRef.current || game.phase !== "roundclear") return;
       roundClearAt.current = 0;
       const nr = game.round + 1;
-      startTrans(
-        `LEVEL ${nr}: ${nr === 2 ? "WATER" : "NATURE"}`,
-        nr === 2 ? "#46e0d4" : "#ffffff",
-        () => {
-          game.nextRound();
-          force((v) => v + 1);
-        }
-      );
+      const label = nr === 2 ? "WATER" : nr === 3 ? "FIRE" : "NATURE";
+      const color = nr === 2 ? "#46e0d4" : nr === 3 ? "#ff7a3c" : "#ffffff";
+      startTrans(`LEVEL ${nr}: ${label}`, color, () => {
+        game.nextRound();
+        force((v) => v + 1);
+      });
     },
     [startTrans]
   );
@@ -301,6 +317,8 @@ export default function GameRoot() {
       game.phase === "lost");
   // the congrats mockup is a clean full screen — hide the chrome behind it
   const inCongrats = !!game && game.phase === "won" && !showStats;
+  const inReward = !!game && game.phase === "won" && showStats && showReward;
+  const hideChrome = inCongrats || inReward;
 
   // Auto-save play record + leaderboard once per session when game ends
   if (game && choice && !endSavedRef.current && (game.phase === "won" || game.phase === "lost")) {
@@ -316,7 +334,7 @@ export default function GameRoot() {
   return (
     <div className="app-shell">
       {/* compact header — hidden during the start flow / congrats for the mockup look */}
-      {inGame && !inCongrats && (
+      {inGame && !hideChrome && (
         <div className="app-header">
           <div>
             <span className="title" style={{ fontSize: 14 }}>
@@ -342,7 +360,7 @@ export default function GameRoot() {
         </div>
       )}
 
-      {inGame && !inCongrats && <Hud game={game!} />}
+      {inGame && !hideChrome && <Hud game={game!} />}
 
       {/* the stage fills the rest of the viewport */}
       <div ref={stageRef} className="game-stage scanlines">
@@ -398,11 +416,17 @@ export default function GameRoot() {
               <div className="title" style={{ fontSize: 18, color: "#66bb6a" }}>
                 ROUND {game.round} CLEAR!
               </div>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={BADGE_BY_ROUND[game.round - 1]}
+                alt="badge"
+                className="round-badge"
+              />
               <p className="lead">
-                Reached <b>{game.map.goalName}</b> · +{cfg.scoring.w_round} score
+                Reached <b>{game.map.goalName}</b> · badge earned · +{cfg.scoring.w_round} score
               </p>
               <p className="lead">
-                HP {Math.ceil(game.hp)} and energy {Math.ceil(game.energy)} carry over.
+                HP <b>{Math.ceil(game.hp)}</b> carries over · energy refilled for the next level.
               </p>
               <button
                 className="pixel-btn primary"
@@ -422,6 +446,12 @@ export default function GameRoot() {
             <div className="congrats-saying">{sayingFor(game.correct, game.answered)}</div>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/ui/trophy.png" alt="trophy" className="congrats-trophy" />
+            <div className="congrats-badges">
+              {BADGE_BY_ROUND.map((src) => (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img key={src} src={src} alt="" />
+              ))}
+            </div>
             <div className="congrats-stats">
               <div>TIME ELAPSED:</div>
               <div className="congrats-val">{fmtElapsed(game.elapsed)}</div>
@@ -491,8 +521,13 @@ export default function GameRoot() {
               </ol>
 
               <div style={{ display: "flex", gap: 10, justifyContent: "center", marginTop: 12 }}>
+                {game.phase === "won" && (
+                  <button className="pixel-btn primary" onClick={() => setShowReward(true)}>
+                    🏆 Claim your reward
+                  </button>
+                )}
                 <button
-                  className="pixel-btn primary"
+                  className="pixel-btn"
                   onClick={() => choice && newGame(game.mode, choice)}
                 >
                   ▶ Play again (R)
@@ -503,6 +538,17 @@ export default function GameRoot() {
               </div>
             </div>
           </div>
+        )}
+
+        {/* white circular reward ending — directs winners to claim in person */}
+        {inReward && (
+          <RewardEnding
+            score={game!.score}
+            grade={game!.grade}
+            badges={BADGE_BY_ROUND}
+            onPlayAgain={() => choice && newGame(game!.mode, choice)}
+            onMenu={backToTitle}
+          />
         )}
 
         {/* circle iris wipe between rounds */}

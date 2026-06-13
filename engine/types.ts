@@ -12,7 +12,7 @@ export type Terrain =
   | "ledge";
 
 /** Visual theme per round; terrain semantics stay identical across themes. */
-export type MapTheme = "nature" | "water";
+export type MapTheme = "nature" | "water" | "fire";
 
 export type MobTier = "slime" | "goblin" | "wraith";
 
@@ -62,6 +62,23 @@ export interface Question {
   explain: string;
 }
 
+/**
+ * A coherent multi-round fight: a Goblin (2 rounds) or Ghost (3 rounds) asks the
+ * rounds of ONE set sequentially, one per hit — §VII. `rounds[i]` is hit i+1.
+ */
+export interface EncounterSet {
+  id: string;
+  difficulty: "medium" | "hard";
+  label: string; // e.g. "Physics & Math"
+  rounds: Question[];
+}
+
+/** Structured question data: singles drawn by difficulty + sequential encounter sets. */
+export interface QuestionData {
+  questions: Question[];
+  sets: EncounterSet[];
+}
+
 export type BotProfile =
   | "fixed50"
   | "fixed70"
@@ -87,6 +104,10 @@ export interface BattleState {
   question: Question;
   shuffledChoices: string[];
   correctIndex: number;
+  /** 1-based round/hit number within this fight (Slime 1, Goblin 1–2, Ghost 1–3). */
+  questionNo: number;
+  /** Encounter-set theme label for multi-hit mobs (e.g. "Physics & Math"). */
+  setLabel: string;
   /** EP analysis shown to the player. */
   eFight: number;
   eRetreat: number;

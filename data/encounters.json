@@ -1,0 +1,318 @@
+[
+  {
+    "id": "gob1",
+    "difficulty": "medium",
+    "label": "Physics & Math",
+    "rounds": [
+      {
+        "id": "m1",
+        "subject": "Physics",
+        "difficulty": "medium",
+        "q": "What invisible force keeps planets in orbit around the sun?",
+        "choices": [
+          "Gravity",
+          "Magnetism",
+          "Friction",
+          "Inertia"
+        ],
+        "explain": "Gravity holds planets in their orbits."
+      },
+      {
+        "id": "m2",
+        "subject": "Math",
+        "difficulty": "medium",
+        "q": "What is the value of Pi rounded to two decimal places?",
+        "choices": [
+          "3.14",
+          "3.12",
+          "3.16",
+          "3.18"
+        ],
+        "explain": "Pi rounds to 3.14."
+      }
+    ]
+  },
+  {
+    "id": "gob2",
+    "difficulty": "medium",
+    "label": "History & Literature",
+    "rounds": [
+      {
+        "id": "m3",
+        "subject": "History",
+        "difficulty": "medium",
+        "q": "Who was the first President of the Philippine Republic?",
+        "choices": [
+          "Emilio Aguinaldo",
+          "Manuel L. Quezon",
+          "Jose P. Laurel",
+          "Sergio Osmena"
+        ],
+        "explain": "Emilio Aguinaldo led the First Philippine Republic."
+      },
+      {
+        "id": "m4",
+        "subject": "Literature",
+        "difficulty": "medium",
+        "q": "Who is the renowned Filipino poet that wrote the epic “Florante at Laura”?",
+        "choices": [
+          "Francisco Balagtas",
+          "Jose Rizal",
+          "Nick Joaquin",
+          "Lualhati Bautista"
+        ],
+        "explain": "Francisco Balagtas wrote Florante at Laura."
+      }
+    ]
+  },
+  {
+    "id": "gob3",
+    "difficulty": "medium",
+    "label": "Geography & Biology",
+    "rounds": [
+      {
+        "id": "m5",
+        "subject": "Geography",
+        "difficulty": "medium",
+        "q": "What is the highest mountain above sea level on Earth?",
+        "choices": [
+          "Mount Everest",
+          "K2",
+          "Mount Kilimanjaro",
+          "Mount Fuji"
+        ],
+        "explain": "Mount Everest is the highest above sea level."
+      },
+      {
+        "id": "m6",
+        "subject": "Biology",
+        "difficulty": "medium",
+        "q": "What part of a plant is primarily responsible for conducting photosynthesis?",
+        "choices": [
+          "The leaf (or leaves)",
+          "The root",
+          "The stem",
+          "The flower"
+        ],
+        "explain": "Photosynthesis occurs mainly in the leaves."
+      }
+    ]
+  },
+  {
+    "id": "gob4",
+    "difficulty": "medium",
+    "label": "Grammar & Chemistry",
+    "rounds": [
+      {
+        "id": "m7",
+        "subject": "Grammar",
+        "difficulty": "medium",
+        "q": "What part of speech is used to describe a noun?",
+        "choices": [
+          "Adjective",
+          "Adverb",
+          "Verb",
+          "Pronoun"
+        ],
+        "explain": "Adjectives describe or modify nouns."
+      },
+      {
+        "id": "m8",
+        "subject": "Chemistry",
+        "difficulty": "medium",
+        "q": "What two elements make up a molecule of water?",
+        "choices": [
+          "Hydrogen and Oxygen",
+          "Carbon and Oxygen",
+          "Nitrogen and Hydrogen",
+          "Helium and Oxygen"
+        ],
+        "explain": "Water is H2O: hydrogen and oxygen."
+      }
+    ]
+  },
+  {
+    "id": "gho1",
+    "difficulty": "hard",
+    "label": "Chemistry, Literature, History",
+    "rounds": [
+      {
+        "id": "h1",
+        "subject": "Chemistry",
+        "difficulty": "hard",
+        "q": "What is the atomic number of Carbon?",
+        "choices": [
+          "6",
+          "4",
+          "8",
+          "12"
+        ],
+        "explain": "Carbon's atomic number is 6."
+      },
+      {
+        "id": "h2",
+        "subject": "Literature",
+        "difficulty": "hard",
+        "q": "What is the literary term for a direct comparison between two things using “like” or “as”?",
+        "choices": [
+          "Simile",
+          "Metaphor",
+          "Personification",
+          "Hyperbole"
+        ],
+        "explain": "A simile compares using 'like' or 'as'."
+      },
+      {
+        "id": "h3",
+        "subject": "History",
+        "difficulty": "hard",
+        "q": "Who was the revolutionary leader famously known as the “Brains of the Katipunan”?",
+        "choices": [
+          "Emilio Jacinto",
+          "Apolinario Mabini",
+          "Antonio Luna",
+          "Andres Bonifacio"
+        ],
+        "explain": "Emilio Jacinto was the Brains of the Katipunan."
+      }
+    ]
+  },
+  {
+    "id": "gho2",
+    "difficulty": "hard",
+    "label": "Biology, Physics, Economics",
+    "rounds": [
+      {
+        "id": "h4",
+        "subject": "Biology",
+        "difficulty": "hard",
+        "q": "What molecule carries the genetic instructions for life in almost all living organisms?",
+        "choices": [
+          "DNA (Deoxyribonucleic acid)",
+          "RNA",
+          "ATP",
+          "Protein"
+        ],
+        "explain": "DNA stores genetic instructions."
+      },
+      {
+        "id": "h5",
+        "subject": "Physics",
+        "difficulty": "hard",
+        "q": "Which physicist is famous for developing the theory of general relativity?",
+        "choices": [
+          "Albert Einstein",
+          "Isaac Newton",
+          "Nikola Tesla",
+          "Stephen Hawking"
+        ],
+        "explain": "Einstein developed general relativity."
+      },
+      {
+        "id": "h6",
+        "subject": "Economics",
+        "difficulty": "hard",
+        "q": "What economic metric represents the total value of all goods and services produced in a country during one year?",
+        "choices": [
+          "GDP (Gross Domestic Product)",
+          "GNP (Gross National Product)",
+          "CPI (Consumer Price Index)",
+          "Inflation Rate"
+        ],
+        "explain": "GDP measures yearly domestic output."
+      }
+    ]
+  },
+  {
+    "id": "gho3",
+    "difficulty": "hard",
+    "label": "Earth Science, Math, Civics",
+    "rounds": [
+      {
+        "id": "h7",
+        "subject": "Earth Science",
+        "difficulty": "hard",
+        "q": "What is the name of the boundary where two tectonic plates collide?",
+        "choices": [
+          "Convergent boundary",
+          "Divergent boundary",
+          "Transform boundary",
+          "Fault line"
+        ],
+        "explain": "Colliding plates form a convergent boundary."
+      },
+      {
+        "id": "h8",
+        "subject": "Math",
+        "difficulty": "hard",
+        "q": "In a right triangle, what is the term for the longest side opposite the right angle?",
+        "choices": [
+          "Hypotenuse",
+          "Adjacent",
+          "Opposite",
+          "Vertex"
+        ],
+        "explain": "The hypotenuse is opposite the right angle."
+      },
+      {
+        "id": "h9",
+        "subject": "Civics",
+        "difficulty": "hard",
+        "q": "What are the three co-equal branches of the Philippine government?",
+        "choices": [
+          "Executive, Legislative, and Judicial",
+          "Local, National, and International",
+          "Presidential, Senatorial, and Congressional",
+          "Military, Civilian, and Religious"
+        ],
+        "explain": "The three branches are Executive, Legislative, Judicial."
+      }
+    ]
+  },
+  {
+    "id": "gho4",
+    "difficulty": "hard",
+    "label": "Astronomy, Art History, Anatomy",
+    "rounds": [
+      {
+        "id": "h10",
+        "subject": "Astronomy",
+        "difficulty": "hard",
+        "q": "What is the term for a star that suddenly increases greatly in brightness because of a catastrophic explosion?",
+        "choices": [
+          "Supernova",
+          "Black hole",
+          "Nebula",
+          "Pulsar"
+        ],
+        "explain": "A supernova is an exploding star."
+      },
+      {
+        "id": "h11",
+        "subject": "Art History",
+        "difficulty": "hard",
+        "q": "While most famous for the Spoliarium, which Filipino master painter also created the 1892 masterpiece “The Parisian Life”?",
+        "choices": [
+          "Juan Luna",
+          "Felix Resurreccion Hidalgo",
+          "Fernando Amorsolo",
+          "Vicente Manansala"
+        ],
+        "explain": "Juan Luna painted The Parisian Life (1892)."
+      },
+      {
+        "id": "h12",
+        "subject": "Anatomy",
+        "difficulty": "hard",
+        "q": "What is the medical term for the voice box in human anatomy?",
+        "choices": [
+          "Larynx",
+          "Pharynx",
+          "Trachea",
+          "Esophagus"
+        ],
+        "explain": "The larynx is the voice box."
+      }
+    ]
+  }
+]

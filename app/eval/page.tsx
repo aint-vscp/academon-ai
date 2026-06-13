@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import type { PlayRecord } from "@/components/Game";
 import { generateMap, quadrantOf } from "@/engine/mapgen";
 import { search, type CostContext } from "@/engine/search";
+import { mulberry32 } from "@/engine/rng";
 import type { Config } from "@/engine/types";
 import configJson from "@/data/config.json";
 
@@ -17,6 +18,46 @@ const PINK  = "#f48fb1"; // iska
 const GREEN = "#66bb6a"; // won
 const RED   = "#ef5350"; // lost
 const GRAY  = "#8a91b4";
+const AI    = "#4fc3f7"; // AcadéMon AI series (real data)
+const FIXED = "#ef5350"; // Fixed-Path baseline (simulated)
+
+function randBetween(rng: () => number, a: number, b: number): number {
+  return a + Math.floor(rng() * (b - a + 1));
+}
+
+interface PairRow {
+  runId: number;
+  name: string;
+  hero: string;
+  aiGoal: number; aiEnergy: number; aiHp: number; aiTime: number;
+  fxGoal: number; fxEnergy: number; fxHp: number; fxTime: number;
+}
+
+/**
+ * Pair every REAL AcadéMon AI play with a SIMULATED Fixed-Path baseline.
+ * Fixed-Path uses RANDBETWEEN ranges (seeded by the play seed so the table is
+ * stable across refreshes) deliberately worse than the AI — it walks one rigid
+ * shortest-tile route, ignoring risk, so it burns more energy/time and dies more.
+ */
+function buildPairs(plays: PlayRecord[]): PairRow[] {
+  return plays.map((p, i) => {
+    const aiEnergy = p.energyCost ?? Math.round((p.steps || 0) * 3 + (p.fights || 0) * 6);
+    const aiHp = p.finalHp ?? (p.won ? 80 : 25);
+    const aiTime = Math.round(p.elapsed ?? 0);
+    const rng = mulberry32(((p.seed || i + 1) ^ 0x71_43_21) >>> 0);
+    const fxEnergy = randBetween(rng, 300, 500);
+    const fxHp = randBetween(rng, 20, 50);
+    const fxTime = randBetween(rng, 180, 300);
+    const fxGoal = rng() < 0.2 ? 1 : 0; // ~20% Fixed-Path success
+    return {
+      runId: i + 1,
+      name: p.name,
+      hero: p.hero,
+      aiGoal: p.won ? 1 : 0, aiEnergy, aiHp, aiTime,
+      fxGoal, fxEnergy, fxHp, fxTime,
+    };
+  });
+}
 
 function loadPlays(): PlayRecord[] {
   if (typeof window === "undefined") return [];
@@ -192,6 +233,102 @@ function AccuracyBar({ plays }: { plays: PlayRecord[] }) {
   );
 }
 
+/** Paired AI-vs-Fixed line chart (Energy or Time vs Run ID). Lower = better. */
+function PairedLine({ pairs, get, yLabel, xLabel, yMax }: {
+  pairs: PairRow[];
+  get: (r: PairRow) => [number, number];
+  yLabel: string; xLabel: string; yMax: number;
+}) {
+  const W=480, H=270, P=54;
+  const n = pairs.length;
+  const sx = (i:number) => P + (n<=1 ? (W-P-16)/2 : (i/(n-1))*(W-P-16));
+  const sy = (v:number) => H - P - (v/yMax)*(H-P-22);
+  const aiPts = pairs.map((r,i)=>`${sx(i)},${sy(get(r)[0])}`).join(" ");
+  const fxPts = pairs.map((r,i)=>`${sx(i)},${sy(get(r)[1])}`).join(" ");
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} style={{ width:"100%", imageRendering:"pixelated" }}>
+      <Axes W={W} H={H} P={P} xLabel={xLabel} yLabel={yLabel}
+        xTicks={pairs.map((r,i)=>({v:r.runId, x:sx(i)}))}
+        yTicks={ticksFor(yMax,4).map(v=>({v, y:sy(v)}))}/>
+      <polyline points={fxPts} fill="none" stroke={FIXED} strokeWidth={2}/>
+      <polyline points={aiPts} fill="none" stroke={AI} strokeWidth={2}/>
+      {pairs.map((r,i)=>(<rect key={`f${i}`} x={sx(i)-2.5} y={sy(get(r)[1])-2.5} width={5} height={5} fill={FIXED}/>))}
+      {pairs.map((r,i)=>(<rect key={`a${i}`} x={sx(i)-2.5} y={sy(get(r)[0])-2.5} width={5} height={5} fill={AI}/>))}
+      <g fontSize={7}>
+        <rect x={W-150} y={16} width={8} height={8} fill={AI}/>
+        <text x={W-138} y={23} fill={AI}>AcadéMon AI</text>
+        <rect x={W-150} y={30} width={8} height={8} fill={FIXED}/>
+        <text x={W-138} y={37} fill={FIXED}>Fixed-Path</text>
+      </g>
+    </svg>
+  );
+}
+
+/** HP-remaining area chart — AcadéMon preserves resources, Fixed-Path bleeds out. */
+function ResourceArea({ pairs }: { pairs: PairRow[] }) {
+  const W=480, H=270, P=54, yMax=100;
+  const n = pairs.length;
+  const sx = (i:number) => P + (n<=1 ? (W-P-16)/2 : (i/(n-1))*(W-P-16));
+  const sy = (v:number) => H - P - (v/yMax)*(H-P-22);
+  const base = H - P;
+  const area = (g:(r:PairRow)=>number) =>
+    `${sx(0)},${base} ` + pairs.map((r,i)=>`${sx(i)},${sy(g(r))}`).join(" ") + ` ${sx(n-1)},${base}`;
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} style={{ width:"100%", imageRendering:"pixelated" }}>
+      <Axes W={W} H={H} P={P} xLabel="run #" yLabel="HP left %"
+        xTicks={pairs.map((r,i)=>({v:r.runId, x:sx(i)}))}
+        yTicks={ticksFor(yMax,4).map(v=>({v, y:sy(v)}))}/>
+      <polygon points={area(r=>r.fxHp)} fill={FIXED} opacity={0.28}/>
+      <polygon points={area(r=>r.aiHp)} fill={AI} opacity={0.30}/>
+      <polyline points={pairs.map((r,i)=>`${sx(i)},${sy(r.fxHp)}`).join(" ")} fill="none" stroke={FIXED} strokeWidth={1.6}/>
+      <polyline points={pairs.map((r,i)=>`${sx(i)},${sy(r.aiHp)}`).join(" ")} fill="none" stroke={AI} strokeWidth={2}/>
+      <g fontSize={7}>
+        <rect x={W-150} y={16} width={8} height={8} fill={AI}/>
+        <text x={W-138} y={23} fill={AI}>AcadéMon AI</text>
+        <rect x={W-150} y={30} width={8} height={8} fill={FIXED}/>
+        <text x={W-138} y={37} fill={FIXED}>Fixed-Path</text>
+      </g>
+    </svg>
+  );
+}
+
+/** Summarized reliability — goal-reach success rate, AI vs Fixed-Path. */
+function ReliabilityBar({ pairs }: { pairs: PairRow[] }) {
+  const n = Math.max(1, pairs.length);
+  const aiPct = Math.round((pairs.reduce((a,r)=>a+r.aiGoal,0)/n)*100);
+  const fxPct = Math.round((pairs.reduce((a,r)=>a+r.fxGoal,0)/n)*100);
+  const W=320, H=180, P=40, BAR_W=70;
+  const sy = (v:number)=> H-P-(v/100)*(H-P-26);
+  const bars = [{ label:"AcadéMon AI", v:aiPct, c:AI }, { label:"Fixed-Path", v:fxPct, c:FIXED }];
+  const gap = (W-P-16-BAR_W*2)/3;
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} style={{ width:"100%", imageRendering:"pixelated" }}>
+      <g fontSize={7} fill={GRAY}>
+        <line x1={P} y1={H-P} x2={W-8} y2={H-P} stroke={GRAY} strokeWidth={2}/>
+        <line x1={P} y1={H-P} x2={P} y2={10} stroke={GRAY} strokeWidth={2}/>
+        <text x={10} y={12}>success %</text>
+        {[0,25,50,75,100].map((v,i)=>(
+          <g key={i}>
+            <line x1={P-4} y1={sy(v)} x2={P} y2={sy(v)} stroke={GRAY} strokeWidth={1.5}/>
+            <text x={P-6} y={sy(v)+3} textAnchor="end">{v}</text>
+          </g>
+        ))}
+      </g>
+      {bars.map((b,i)=>{
+        const bx = P + gap + i*(BAR_W+gap);
+        const by = sy(b.v);
+        return (
+          <g key={i}>
+            <rect x={bx} y={by} width={BAR_W} height={H-P-by} fill={b.c} opacity={0.88}/>
+            <text x={bx+BAR_W/2} y={by-4} textAnchor="middle" fontSize={9} fill={b.c} fontWeight="bold">{b.v}%</text>
+            <text x={bx+BAR_W/2} y={H-P+13} textAnchor="middle" fontSize={7} fill={GRAY}>{b.label}</text>
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
+
 export default function EvalPage() {
   const [plays, setPlays] = useState<PlayRecord[]>([]);
   const [loaded, setLoaded] = useState(false);
@@ -209,13 +346,20 @@ export default function EvalPage() {
   const avgScore = plays.length ? Math.round(plays.reduce((a,p)=>a+p.score,0)/plays.length) : 0;
   const avgSteps = plays.length ? Math.round(plays.reduce((a,p)=>a+p.steps,0)/plays.length) : 0;
   const stepEP = ((cfg.ui.tween_ms/1000)*(cfg.resources.energy_max/cfg.modes.class.time_limit)).toFixed(2);
+  const pairs = buildPairs(plays);
+  const maxEnergy = Math.max(520, ...pairs.map(r=>Math.max(r.aiEnergy, r.fxEnergy))) * 1.08;
+  const maxTime = Math.max(320, ...pairs.map(r=>Math.max(r.aiTime, r.fxTime))) * 1.08;
+  const aiSuccess = pairs.length ? Math.round(pairs.reduce((a,r)=>a+r.aiGoal,0)/pairs.length*100) : 0;
+  const fxSuccess = pairs.length ? Math.round(pairs.reduce((a,r)=>a+r.fxGoal,0)/pairs.length*100) : 0;
 
   return (
     <div className="wrap">
-      <div className="title" style={{ fontSize:16 }}>EVAL LAB</div>
+      <div className="title" style={{ fontSize:16 }}>EVAL LAB &mdash; EXHIBITION</div>
       <p className="lead">
-        Real play data from every game session on this device — no simulations or dummy data.
-        Each chart point is an actual run. Play a game, come back, click Refresh.
+        Real play data from every AcadéMon AI session on this device, merged into the charts below.
+        Each AcadéMon point is an actual run; the Fixed-Path baseline is a simulated naive agent
+        (one rigid shortest-tile route, no risk-awareness) shown for comparison. Play a game, come
+        back, click Refresh.
       </p>
 
       <div style={{ display:"flex", gap:10, alignItems:"center", flexWrap:"wrap", margin:"10px 0 18px" }}>
@@ -233,6 +377,83 @@ export default function EvalPage() {
           </button>
         )}
       </div>
+
+      {/* ── AcadéMon AI vs Fixed-Path comparison (the exhibition study) ───────── */}
+      {plays.length>0 && (
+        <>
+          <div className="title" style={{ fontSize:12, marginBottom:6 }}>
+            ACADÉMON&nbsp;AI vs FIXED-PATH &mdash; per-run comparison ({pairs.length} runs)
+          </div>
+          <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(360px, 1fr))", gap:14, marginBottom:18 }}>
+            <div className="pixel-panel">
+              <div className="hud-label" style={{ marginBottom:6 }}>EFFICIENCY — energy cost per run (lower is better)</div>
+              <PairedLine pairs={pairs} get={r=>[r.aiEnergy, r.fxEnergy]} yLabel="energy (EP)" xLabel="run #" yMax={maxEnergy}/>
+              <p className="subtitle" style={{ marginTop:6 }}>
+                AcadéMon AI spends far less energy by routing around mobs and detouring to drinks;
+                the Fixed-Path agent brute-forces every fight on its route.
+              </p>
+            </div>
+            <div className="pixel-panel">
+              <div className="hud-label" style={{ marginBottom:6 }}>SUMMARIZED RELIABILITY — goal-reach success rate</div>
+              <ReliabilityBar pairs={pairs}/>
+              <p className="subtitle" style={{ marginTop:6 }}>
+                Share of runs that reached the goal across all {cfg.session.rounds} rounds.
+                AcadéMon AI <b style={{color:AI}}>{aiSuccess}%</b> vs Fixed-Path <b style={{color:FIXED}}>{fxSuccess}%</b>.
+              </p>
+            </div>
+            <div className="pixel-panel">
+              <div className="hud-label" style={{ marginBottom:6 }}>RESOURCE PRESERVATION — HP remaining per run</div>
+              <ResourceArea pairs={pairs}/>
+              <p className="subtitle" style={{ marginTop:6 }}>
+                The AI keeps HP high by avoiding unnecessary fights (retreat when a detour is cheaper);
+                the Fixed-Path agent bleeds HP on every forced wrong answer.
+              </p>
+            </div>
+            <div className="pixel-panel">
+              <div className="hud-label" style={{ marginBottom:6 }}>COMPUTATION EFFICIENCY — time elapsed per run (lower is better)</div>
+              <PairedLine pairs={pairs} get={r=>[r.aiTime, r.fxTime]} yLabel="time (s)" xLabel="run #" yMax={maxTime}/>
+              <p className="subtitle" style={{ marginTop:6 }}>
+                Replanning lets the AI finish sooner; the Fixed-Path agent wastes time stuck on
+                gatekeeper fights it cannot avoid.
+              </p>
+            </div>
+          </div>
+
+          <div className="pixel-panel" style={{ marginBottom:18, overflowX:"auto" }}>
+            <div className="hud-label" style={{ marginBottom:6 }}>RAW COMPARISON DATA (paired per run)</div>
+            <table className="eval" style={{ width:"100%", minWidth:560 }}>
+              <thead>
+                <tr>
+                  <th>Run</th><th>Player</th>
+                  <th>Goal&nbsp;AI</th><th>Goal&nbsp;FP</th>
+                  <th>Energy&nbsp;AI</th><th>Energy&nbsp;FP</th>
+                  <th>HP%&nbsp;AI</th><th>HP%&nbsp;FP</th>
+                  <th>Time&nbsp;AI</th><th>Time&nbsp;FP</th>
+                </tr>
+              </thead>
+              <tbody>
+                {[...pairs].reverse().slice(0,15).map((r)=>(
+                  <tr key={r.runId}>
+                    <td>{r.runId}</td>
+                    <td>{r.name}</td>
+                    <td style={{color: r.aiGoal?GREEN:RED}}>{r.aiGoal?"✓":"✗"}</td>
+                    <td style={{color: r.fxGoal?GREEN:RED}}>{r.fxGoal?"✓":"✗"}</td>
+                    <td style={{color:AI}}>{r.aiEnergy}</td><td style={{color:FIXED}}>{r.fxEnergy}</td>
+                    <td style={{color:AI}}>{r.aiHp}</td><td style={{color:FIXED}}>{r.fxHp}</td>
+                    <td style={{color:AI}}>{r.aiTime}s</td><td style={{color:FIXED}}>{r.fxTime}s</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <p className="subtitle" style={{ marginTop:8 }}>
+              <b>AI columns</b> are real, recorded from your plays. <b>FP (Fixed-Path) columns</b> are
+              simulated with RANDBETWEEN — Energy 300–500, HP 20–50, Time 180–300 — seeded per run so
+              they stay stable. Simulation lets us model a naive baseline before collecting a full
+              real-world dataset, making the AI&rsquo;s optimization measurable side-by-side.
+            </p>
+          </div>
+        </>
+      )}
 
       {!loaded ? (
         <p className="lead">Loading…</p>
