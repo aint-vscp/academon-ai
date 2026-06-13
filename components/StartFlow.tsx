@@ -7,13 +7,14 @@
 import { useEffect, useState } from "react";
 import type { GameMode } from "@/engine/types";
 import { heroPortraitSrc, type HeroVariant } from "@/lib/sprites";
+import { LeaderboardList, loadBoard } from "./Leaderboard";
 
 export interface StartChoice {
   hero: HeroVariant;
   name: string;
 }
 
-type Step = "title" | "options" | "character" | "name";
+type Step = "title" | "options" | "character" | "name" | "leaderboard";
 
 export default function StartFlow({
   mode,
@@ -35,7 +36,7 @@ export default function StartFlow({
   // dev/booth deep-link: ?screen=character|options|name (set after mount — no SSR mismatch)
   useEffect(() => {
     const s = new URLSearchParams(window.location.search).get("screen");
-    if (s === "character" || s === "options" || s === "name") {
+    if (s === "character" || s === "options" || s === "name" || s === "leaderboard") {
       if (s === "name") setHero("isko");
       setStep(s as Step);
     }
@@ -62,10 +63,33 @@ export default function StartFlow({
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/ui/btn_options.png" alt="OPTIONS" />
           </button>
+          <button className="img-btn" onClick={() => setStep("leaderboard")}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/ui/btn_leaderboard.png" alt="LEADERBOARD" />
+          </button>
           <a className="img-btn" href="/eval">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/ui/btn_eval.png" alt="EVALUATION LAB" />
           </a>
+        </div>
+      </div>
+    );
+  }
+
+  // ---------- leaderboard ----------
+  if (step === "leaderboard") {
+    const board = loadBoard();
+    return (
+      <div className="charsel-bg">
+        <button className="back-arrow" onClick={() => setStep("title")} aria-label="Back">
+          ⬅
+        </button>
+        <div className="charsel-title lb-screen-title">LEADERBOARD</div>
+        <div className="lb-wrap">
+          <LeaderboardList entries={board} slots={5} />
+          {board.length === 0 && (
+            <p className="subtitle lb-hint">No scores yet — finish a run to claim the crown!</p>
+          )}
         </div>
       </div>
     );

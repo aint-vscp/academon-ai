@@ -14,6 +14,7 @@ import IrisTransition from "./IrisTransition";
 import StartFlow, { type StartChoice } from "./StartFlow";
 import { preloadSprites, setHeroVariant } from "@/lib/sprites";
 import RewardEnding from "./RewardEnding";
+import { LeaderboardList, loadBoard, saveBoard, type LeaderEntry } from "./Leaderboard";
 import type { Config, EncounterSet, GameMode, Question } from "@/engine/types";
 import configJson from "@/data/config.json";
 import questionsJson from "@/data/questions.json";
@@ -25,12 +26,6 @@ const encounterSets = encountersJson as unknown as EncounterSet[];
 
 /** Reward badge per cleared level (Certificate → Trophy → Pylon Torch). */
 const BADGE_BY_ROUND = ["/ui/badge_nature.png", "/ui/badge_water.png", "/ui/badge_fire.png"];
-
-interface LeaderEntry {
-  name: string;
-  score: number;
-  goal: string;
-}
 
 /** Persisted record of a single play session — powers the Eval Lab real-data charts. */
 export interface PlayRecord {
@@ -77,18 +72,6 @@ interface TransSpec {
   label: string;
   color: string;
   mid: () => void;
-}
-
-function loadBoard(): LeaderEntry[] {
-  try {
-    return JSON.parse(localStorage.getItem("academon-board") ?? "[]");
-  } catch {
-    return [];
-  }
-}
-
-function saveBoard(b: LeaderEntry[]) {
-  localStorage.setItem("academon-board", JSON.stringify(b.slice(0, 10)));
 }
 
 function recordPlay(game: Game, name: string, hero: "isko" | "iska") {
@@ -500,25 +483,11 @@ export default function GameRoot() {
                 followed AI {game.followed} · defied {game.defied} · time {fmtElapsed(game.elapsed)}
               </div>
 
-              {/* leaderboard — always visible; populated automatically on game end */}
-              <div className="hud-label" style={{ marginTop: 14, marginBottom: 4 }}>
+              {/* leaderboard — styled rows, populated automatically on game end */}
+              <div className="hud-label" style={{ marginTop: 14, marginBottom: 6 }}>
                 LEADERBOARD
               </div>
-              <ol className="leaderboard">
-                {board.length === 0 ? (
-                  <li style={{ color: "var(--dim)", listStyle: "none" }}>No scores yet — be the first!</li>
-                ) : (
-                  board.slice(0, 8).map((e, i) => (
-                    <li key={i} className={e.name === choice?.name ? "lb-current" : ""}>
-                      {i === 0 && (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src="/ui/crown.png" alt="" className="crown-img" />
-                      )}
-                      <b>{e.name}</b> — {e.score} <span style={{ color: "var(--dim)" }}>({e.goal})</span>
-                    </li>
-                  ))
-                )}
-              </ol>
+              <LeaderboardList entries={board} currentName={choice?.name} slots={5} />
 
               <div style={{ display: "flex", gap: 10, justifyContent: "center", marginTop: 12 }}>
                 {game.phase === "won" && (
