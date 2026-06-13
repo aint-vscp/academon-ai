@@ -660,18 +660,23 @@ input.pixel-input {
   inset: 0;
   background: url("/ui/main_bg.png") center / cover no-repeat;
   image-rendering: pixelated;
-  overflow: auto;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(6px, 1.6vh, 22px);
+  padding: 10px;
 }
 
 .title-stack {
   position: relative;
   text-align: center;
-  padding-top: 4vh;
 }
 
 .group2-banner {
   display: inline-block;
-  font-size: clamp(16px, 3.2vw, 30px);
+  font-size: clamp(14px, min(3.2vw, 4.4vh), 30px);
   color: #ffd029;
   -webkit-text-stroke: 2px #1c4e9c;
   text-shadow:
@@ -685,8 +690,8 @@ input.pixel-input {
 
 .pokeball {
   display: block;
-  width: clamp(80px, 13vw, 140px);
-  margin: 6px auto;
+  width: clamp(60px, min(13vw, 15vh), 140px);
+  margin: 4px auto;
   image-rendering: pixelated;
   filter: drop-shadow(0 4px 0 rgba(0, 0, 0, 0.25));
   animation: ball-bounce 2.4s ease-in-out infinite;
@@ -698,7 +703,7 @@ input.pixel-input {
 }
 
 .wordmark {
-  font-size: clamp(24px, 5.4vw, 54px);
+  font-size: clamp(20px, min(5.4vw, 7.4vh), 54px);
   color: #ffc01d;
   -webkit-text-stroke: 2.5px #1c4e9c;
   text-shadow:
@@ -719,10 +724,14 @@ input.pixel-input {
   position: relative;
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: clamp(8px, 1.5vh, 18px);
   align-items: center;
-  margin-top: 5vh;
-  padding-bottom: 5vh;
+}
+
+/* size the lobby tablets by height so all of them always fit one screen */
+.menu-stack .img-btn img {
+  height: clamp(38px, min(9.5vh, 22vw), 84px);
+  width: auto;
 }
 
 /* PNG stone-tablet buttons (start / options / evaluation lab) */
@@ -812,8 +821,13 @@ input.pixel-input {
   inset: 0;
   background: url("/ui/main_bg.png") center / cover no-repeat;
   image-rendering: pixelated;
-  overflow: auto;
-  padding: 24px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(8px, 1.6vh, 20px);
+  padding: 24px 16px;
 }
 
 .charsel-bg::before {
