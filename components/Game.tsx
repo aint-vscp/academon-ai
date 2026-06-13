@@ -13,7 +13,9 @@ import BattleScene, { type BattleApi } from "./BattleScene";
 import IrisTransition from "./IrisTransition";
 import StartFlow, { type StartChoice } from "./StartFlow";
 import { preloadSprites, setHeroVariant } from "@/lib/sprites";
+import { initAudio, playMusic, playSfx, type MusicName } from "@/lib/audio";
 import RewardEnding from "./RewardEnding";
+import VolumeToggle from "./VolumeToggle";
 import { LeaderboardList, loadBoard, saveBoard, dedupeByName, type LeaderEntry } from "./Leaderboard";
 import type { Config, EncounterSet, GameMode, Question } from "@/engine/types";
 import configJson from "@/data/config.json";
@@ -121,6 +123,7 @@ export default function GameRoot() {
   const [board, setBoard] = useState<LeaderEntry[]>([]);
   const endSavedRef = useRef(false); // guard: save once per session on game end
   const toastsSince = useRef(0);
+  const eventsSeen = useRef(0); // index into game.events already turned into SFX
   const [toasts, setToasts] = useState<{ t: number; msg: string }[]>([]);
   const stageRef = useRef<HTMLDivElement>(null);
   const roundClearAt = useRef(0);
@@ -157,6 +160,7 @@ export default function GameRoot() {
       setShowStats(false);
       setShowReward(false);
       toastsSince.current = 0;
+      eventsSeen.current = 0;
       setToasts([]);
       // iris in over the title, reveal Level 1 behind the curtain
       startTrans(game.levelLabel, "#ffffff", () => {
@@ -196,10 +200,20 @@ export default function GameRoot() {
     if (m === "exhibit") setMode("exhibit");
     setBoard(loadBoard());
     preloadSprites();
+    initAudio();
+    // delegated UI click SFX: menu tablets vs in-game buttons
+    const onClick = (e: MouseEvent) => {
+      const t = e.target as HTMLElement | null;
+      if (!t) return;
+      if (t.closest(".img-btn, .stone-btn, .back-arrow, .vol-btn")) playSfx("menu");
+      else if (t.closest("button, .q-choice, a.pixel-btn")) playSfx("button");
+    };
+    window.addEventListener("click", onClick);
     const auto = q.get("autostart");
     if ((auto === "isko" || auto === "iska") && !gameRef.current) {
       newGame(m, { hero: auto, name: auto === "isko" ? "Isko" : "Iska" });
     }
+    return () => window.removeEventListener("click", onClick);
   }, [newGame]);
 
   const toggleFullscreen = useCallback(() => {
@@ -222,6 +236,12 @@ export default function GameRoot() {
       const frozen = transRef.current; // world paused behind the iris curtain
       if (game && !frozen && (game.phase === "running" || game.phase === "battle")) {
         game.tick(dt);
+        // new pickup events → item SFX
+        const evs = game.events;
+        for (let i = eventsSeen.current; i < evs.length; i++) {
+          if (evs[i].kind === "pickup") playSfx("item");
+        }
+        eventsSeen.current = evs.length;
         const fresh = game.toasts(toastsSince.current);
         if (fresh.length) {
           toastsSince.current = fresh[fresh.length - 1].t;
@@ -303,6 +323,18 @@ export default function GameRoot() {
   const inReward = !!game && game.phase === "won" && showStats && showReward;
   const hideChrome = inCongrats || inReward;
 
+  // background music follows the game context (lobby / biome / battle / congrats)
+  let musicKey: MusicName = "lobby";
+  if (game) {
+    if (game.phase === "battle") musicKey = "battle";
+    else if (game.phase === "won") musicKey = "congrats";
+    else if (game.phase === "running" || game.phase === "roundclear")
+      musicKey = game.theme as MusicName;
+  }
+  useEffect(() => {
+    playMusic(musicKey);
+  }, [musicKey]);
+
   // Auto-save play record + leaderboard once per session when game ends
   if (game && choice && !endSavedRef.current && (game.phase === "won" || game.phase === "lost")) {
     endSavedRef.current = true;
@@ -316,6 +348,8 @@ export default function GameRoot() {
 
   return (
     <div className="app-shell">
+      {/* volume toggle is always reachable; lives in the header during play, fixed corner otherwise */}
+      {(!inGame || hideChrome) && <VolumeToggle className="vol-fixed" />}
       {/* compact header — hidden during the start flow / congrats for the mockup look */}
       {inGame && !hideChrome && (
         <div className="app-header">
@@ -339,6 +373,7 @@ export default function GameRoot() {
             <button className="pixel-btn" style={{ padding: "4px 8px", fontSize: 8 }} onClick={toggleFullscreen}>
               ⛶ Fullscreen (F)
             </button>
+            <VolumeToggle />
           </div>
         </div>
       )}

@@ -84,6 +84,28 @@ All tuning lives in `data/config.json` — resources, terrain costs, mob tiers,
 EP/agent parameters, mapgen contract bounds, scoring. Balance target: a
 70%-accuracy player wins ~60–70% of runs.
 
+## Mobile & audio
+
+- **Fully responsive / touch-ready** — one full screen with no page scroll (only
+  the leaderboard scrolls); the battle FIGHT/RETREAT and answer choices are
+  tap-friendly, so it plays on a phone. Add it to your home screen for fullscreen.
+- **Music & SFX** — context-aware looping music (lobby, Nature/Water/Fire biomes,
+  battle, win jingle) plus button/menu/item sound effects, all under a
+  **🔊 volume toggle** (top-right / in the in-game header). Drop-in audio lives in
+  `public/audio/`.
+
+## Deploy on Vercel
+
+This is a standard static Next.js 15 app — zero config needed:
+
+1. Push to GitHub (already done).
+2. On [vercel.com](https://vercel.com) → **Add New → Project** → import this repo.
+3. Framework preset **Next.js** is auto-detected; build `npm run build`, output handled
+   automatically. Click **Deploy**.
+
+No environment variables or backend required — all state is client-side
+(`localStorage`).
+
 ---
 
 Group 2 · Polytechnic University of the Philippines · Intro to AI

@@ -1463,3 +1463,36 @@ button, a, .char-card, .q-choice, .fight-btn, .run-btn, .img-btn {
   .reward-badges img { width: clamp(46px, 14vw, 80px); }
   .overlay { padding: 10px; }
 }
+
+/* ============ ROUND 16: VOLUME TOGGLE ============ */
+
+.vol-btn {
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 1;
+  color: var(--ink);
+  background: var(--panel2);
+  border: 2px solid var(--border);
+  box-shadow: 0 3px 0 #060810;
+  padding: 5px 8px;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: filter 60ms steps(2);
+}
+
+.vol-btn:hover { filter: brightness(1.15); }
+.vol-btn:active { transform: translateY(2px); box-shadow: 0 1px 0 #060810; }
+
+/* fixed corner placement for screens without the in-game header */
+.vol-fixed {
+  position: absolute;
+  top: max(10px, env(safe-area-inset-top));
+  right: max(10px, env(safe-area-inset-right));
+  z-index: 70;
+  background: rgba(28, 34, 64, 0.82);
+  backdrop-filter: blur(2px);
+}
+
+@media (max-width: 760px) {
+  .vol-btn { font-size: 13px; padding: 5px 7px; }
+}
