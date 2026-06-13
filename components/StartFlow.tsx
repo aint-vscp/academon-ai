@@ -171,7 +171,6 @@ export default function StartFlow({
           <input
             className="name-input"
             autoFocus
-            maxLength={12}
             value={name}
             onChange={(e) => setName(e.target.value)}
             onKeyDown={(e) => {

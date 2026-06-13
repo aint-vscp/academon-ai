@@ -26,6 +26,27 @@ interface LeaderEntry {
   goal: string;
 }
 
+/** Persisted record of a single play session — powers the Eval Lab real-data charts. */
+export interface PlayRecord {
+  id: string;
+  ts: number;
+  name: string;
+  hero: "isko" | "iska";
+  mode: "class" | "exhibit";
+  seed: number;
+  steps: number;
+  score: number;
+  won: boolean;
+  failReason?: string | null;
+  correct: number;
+  answered: number;
+  fights: number;
+  retreats: number;
+  replans: number;
+  elapsed: number;
+  roundsCleared: number;
+}
+
 /** Post-game taglines by share of questions answered correctly. */
 function sayingFor(correct: number, answered: number): string {
   const r = answered > 0 ? correct / answered : 0;
@@ -58,6 +79,32 @@ function saveBoard(b: LeaderEntry[]) {
   localStorage.setItem("academon-board", JSON.stringify(b.slice(0, 10)));
 }
 
+function recordPlay(game: Game, name: string, hero: "isko" | "iska") {
+  try {
+    const plays: PlayRecord[] = JSON.parse(localStorage.getItem("academon-plays") ?? "[]");
+    plays.push({
+      id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      ts: Date.now(),
+      name,
+      hero,
+      mode: game.mode,
+      seed: game.seed,
+      steps: game.steps,
+      score: game.score,
+      won: game.phase === "won",
+      failReason: game.failReason,
+      correct: game.correct,
+      answered: game.answered,
+      fights: game.fights,
+      retreats: game.retreats,
+      replans: game.replans,
+      elapsed: game.elapsed,
+      roundsCleared: game.roundsCleared,
+    });
+    localStorage.setItem("academon-plays", JSON.stringify(plays.slice(-100)));
+  } catch {}
+}
+
 function nextSeed(mode: GameMode): number {
   if (mode === "exhibit") {
     // deterministic-but-varied: rotating seed sequence — §II
@@ -74,8 +121,7 @@ export default function GameRoot() {
   const [, force] = useState(0);
   const [mode, setMode] = useState<GameMode>("class");
   const [board, setBoard] = useState<LeaderEntry[]>([]);
-  const [initials, setInitials] = useState("");
-  const [savedScore, setSavedScore] = useState(false);
+  const endSavedRef = useRef(false); // guard: save once per session on game end
   const toastsSince = useRef(0);
   const [toasts, setToasts] = useState<{ t: number; msg: string }[]>([]);
   const stageRef = useRef<HTMLDivElement>(null);
@@ -107,9 +153,8 @@ export default function GameRoot() {
       });
       localStorage.setItem("academon-last-quadrant", String(quadrantOf(game.map, game.map.goal)));
       gameRef.current = game;
-      setSavedScore(false);
+      endSavedRef.current = false;
       setShowStats(false);
-      setInitials(c.name.slice(0, 3).toUpperCase());
       toastsSince.current = 0;
       setToasts([]);
       // iris in over the title, reveal Level 1 behind the curtain
@@ -257,18 +302,16 @@ export default function GameRoot() {
   // the congrats mockup is a clean full screen — hide the chrome behind it
   const inCongrats = !!game && game.phase === "won" && !showStats;
 
-  const submitScore = () => {
-    if (!game || savedScore) return;
-    const entry = {
-      name: (initials || "AAA").slice(0, 3).toUpperCase(),
-      score: game.score,
-      goal: game.map.goalName,
-    };
+  // Auto-save play record + leaderboard once per session when game ends
+  if (game && choice && !endSavedRef.current && (game.phase === "won" || game.phase === "lost")) {
+    endSavedRef.current = true;
+    recordPlay(game, choice.name, choice.hero);
+    const entry: LeaderEntry = { name: choice.name, score: game.score, goal: game.map.goalName };
     const b = [...board, entry].sort((a, z) => z.score - a.score).slice(0, 10);
-    setBoard(b);
     saveBoard(b);
-    setSavedScore(true);
-  };
+    // schedule state update out of render to avoid React warning
+    setTimeout(() => setBoard(b), 0);
+  }
 
   return (
     <div className="app-shell">
@@ -397,7 +440,7 @@ export default function GameRoot() {
         {/* stats / leaderboard panel (after congrats, or on defeat) */}
         {game && (game.phase === "lost" || (game.phase === "won" && showStats)) && (
           <div className="overlay">
-            <div className="pixel-panel" style={{ width: 500, textAlign: "center" }}>
+            <div className="pixel-panel stats-panel" style={{ width: 500, textAlign: "center" }}>
               {game.phase === "won" ? (
                 <>
                   <div className="end-grade">{game.grade}</div>
@@ -427,34 +470,25 @@ export default function GameRoot() {
                 followed AI {game.followed} · defied {game.defied} · time {fmtElapsed(game.elapsed)}
               </div>
 
-              {game.phase === "won" && !savedScore && (
-                <div style={{ marginTop: 10, display: "flex", gap: 8, justifyContent: "center" }}>
-                  <input
-                    className="pixel-input"
-                    maxLength={3}
-                    placeholder="AAA"
-                    value={initials}
-                    onChange={(e) => setInitials(e.target.value)}
-                  />
-                  <button className="pixel-btn primary" onClick={submitScore}>
-                    Save
-                  </button>
-                </div>
-              )}
-
-              {board.length > 0 && (
-                <ol className="leaderboard" style={{ textAlign: "left", marginTop: 12 }}>
-                  {board.slice(0, 5).map((e, i) => (
-                    <li key={i}>
+              {/* leaderboard — always visible; populated automatically on game end */}
+              <div className="hud-label" style={{ marginTop: 14, marginBottom: 4 }}>
+                LEADERBOARD
+              </div>
+              <ol className="leaderboard">
+                {board.length === 0 ? (
+                  <li style={{ color: "var(--dim)", listStyle: "none" }}>No scores yet — be the first!</li>
+                ) : (
+                  board.slice(0, 8).map((e, i) => (
+                    <li key={i} className={e.name === choice?.name ? "lb-current" : ""}>
                       {i === 0 && (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img src="/ui/crown.png" alt="" className="crown-img" />
                       )}
-                      <b>{e.name}</b> — {e.score} ({e.goal})
+                      <b>{e.name}</b> — {e.score} <span style={{ color: "var(--dim)" }}>({e.goal})</span>
                     </li>
-                  ))}
-                </ol>
-              )}
+                  ))
+                )}
+              </ol>
 
               <div style={{ display: "flex", gap: 10, justifyContent: "center", marginTop: 12 }}>
                 <button

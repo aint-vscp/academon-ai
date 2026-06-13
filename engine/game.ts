@@ -115,6 +115,11 @@ export class Game {
     return this.cfg.modes[this.mode].time_limit;
   }
 
+  /** The base seed used for this session (round 1 seed; subsequent rounds offset from it). */
+  get seed() {
+    return this.baseSeed;
+  }
+
   /** Visual theme of the current round: L1 Nature, L2 Water, L3 pending assets → Nature. */
   get theme(): MapTheme {
     return this.round === 2 ? "water" : "nature";

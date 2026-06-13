@@ -1,16 +1,17 @@
 :root {
   --bg: #0d0f1a;
-  --panel: #161a2e;
-  --panel2: #1d2240;
-  --ink: #e9ecff;
-  --dim: #8a91b4;
+  --panel: #1c2240;
+  --panel2: #252d58;
+  --ink: #f2f5ff;
+  --dim: #a8b0d8;
   --accent: #ffd54f;
-  --hp: #ef5350;
+  --hp: #f44336;
   --energy: #ffca28;
-  --time: #4fc3f7;
+  --time: #29b6f6;
   --good: #66bb6a;
-  --bad: #ef5350;
-  --border: #3a4070;
+  --bad: #f44336;
+  --border: #4e60b8;
+  --border-hi: #7080e0;
 }
 
 * {
@@ -40,12 +41,21 @@ canvas {
   padding: 16px;
 }
 
+/* Eval lab and other full pages get a richer background */
+.wrap > .title:first-child {
+  background: linear-gradient(135deg, #1a2050 0%, #0d1028 100%);
+  margin: -16px -16px 12px;
+  padding: 18px 16px 14px;
+  border-bottom: 3px solid var(--border);
+  box-shadow: 0 4px 0 #060810;
+}
+
 .pixel-panel {
   background: var(--panel);
   border: 3px solid var(--border);
   box-shadow:
     0 0 0 3px #090b14,
-    inset 0 0 0 2px #090b14;
+    inset 0 0 0 1px rgba(112, 128, 224, 0.18);
   padding: 12px;
   max-height: 92vh;
   overflow-y: auto;
@@ -69,25 +79,32 @@ button.pixel-btn {
   color: var(--ink);
   background: var(--panel2);
   border: 3px solid var(--border);
-  box-shadow: 0 3px 0 #090b14;
+  box-shadow: 0 3px 0 #060810;
   padding: 10px 14px;
   cursor: pointer;
   text-transform: uppercase;
+  transition: filter 60ms steps(2);
 }
 
 button.pixel-btn:hover {
-  background: #262c52;
+  background: #2e3870;
+  filter: brightness(1.12);
 }
 
 button.pixel-btn:active {
   transform: translateY(2px);
-  box-shadow: 0 1px 0 #090b14;
+  box-shadow: 0 1px 0 #060810;
 }
 
 button.pixel-btn.primary {
   background: #4a3d00;
   border-color: var(--accent);
   color: var(--accent);
+  box-shadow: 0 3px 0 #1a1400;
+}
+
+button.pixel-btn.primary:hover {
+  background: #5c4c00;
 }
 
 button.pixel-btn.danger {
@@ -102,10 +119,11 @@ button.pixel-btn.recommended {
 }
 
 .bar {
-  height: 14px;
-  background: #090b14;
+  height: 16px;
+  background: #080a14;
   border: 2px solid var(--border);
   position: relative;
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.6);
 }
 
 .bar > i {
@@ -115,13 +133,16 @@ button.pixel-btn.recommended {
 }
 
 .bar.hp > i {
-  background: var(--hp);
+  background: linear-gradient(#ff6b6b, #e53935);
+  box-shadow: inset 0 1px 0 #ff9090;
 }
 .bar.energy > i {
-  background: var(--energy);
+  background: linear-gradient(#ffe066, #ffca28);
+  box-shadow: inset 0 1px 0 #fff3a0;
 }
 .bar.time > i {
-  background: var(--time);
+  background: linear-gradient(#64d8fa, #0288d1);
+  box-shadow: inset 0 1px 0 #a8eeff;
 }
 
 .hud-grid {
@@ -131,10 +152,11 @@ button.pixel-btn.recommended {
 }
 
 .hud-label {
-  font-size: 8px;
-  color: var(--dim);
+  font-size: 9px;
+  color: var(--accent);
   margin-bottom: 3px;
   text-transform: uppercase;
+  text-shadow: 1px 1px 0 #000;
 }
 
 .stat-chips {
@@ -150,25 +172,27 @@ button.pixel-btn.recommended {
   border: 2px solid var(--border);
   padding: 3px 7px;
   color: var(--dim);
+  box-shadow: 0 2px 0 #060810;
 }
 
 .chip b {
   color: var(--ink);
 }
 
-.chip.band-Confident b { color: var(--good); }
-.chip.band-Cautious b { color: var(--energy); }
-.chip.band-Defensive b { color: #ff9800; }
+.chip.band-Confident b { color: #69f07a; }
+.chip.band-Cautious b { color: #ffe57f; }
+.chip.band-Defensive b { color: #ffb74d; }
 .chip.band-Survival b { color: var(--bad); }
 
 .overlay {
   position: absolute;
   inset: 0;
-  background: rgba(9, 11, 20, 0.88);
+  background: rgba(6, 8, 18, 0.82);
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 18px;
+  backdrop-filter: blur(1px);
 }
 
 /* ============ BATTLE SCREEN (mockup-accurate, full-screen arena) ============ */
@@ -193,9 +217,9 @@ button.pixel-btn.recommended {
 .binfo {
   position: absolute;
   z-index: 3;
-  background: #34343a;
-  border: 3px solid #1b1b1f;
-  box-shadow: 0 7px 0 rgba(0, 0, 0, 0.5);
+  background: linear-gradient(#2a2a32, #1e1e26);
+  border: 3px solid #4a4a58;
+  box-shadow: 0 7px 0 rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255,255,255,0.06);
   padding: 14px 18px 12px;
   min-width: min(320px, 38vw);
 }
@@ -281,9 +305,9 @@ button.pixel-btn.recommended {
   left: 3%;
   right: 3%;
   bottom: 4%;
-  background: #2c2c31;
-  border: 3px solid #17171a;
-  box-shadow: 0 9px 0 rgba(0, 0, 0, 0.55);
+  background: linear-gradient(#242430, #1a1a24);
+  border: 3px solid #3a3a50;
+  box-shadow: 0 9px 0 rgba(0, 0, 0, 0.65), inset 0 1px 0 rgba(255,255,255,0.05);
   padding: 18px 22px;
   min-height: 118px;
   display: flex;
@@ -307,7 +331,7 @@ button.pixel-btn.recommended {
   margin-top: 12px;
   font-size: 8.5px;
   line-height: 1.7;
-  color: #9aa1bd;
+  color: var(--dim);
   max-width: 560px;
 }
 
@@ -480,7 +504,7 @@ button.pixel-btn.recommended {
   flex: 1;
   min-height: 0;
   border: 3px solid var(--border);
-  box-shadow: 0 0 0 3px #090b14;
+  box-shadow: 0 0 0 3px #060810, 0 0 20px rgba(78, 96, 184, 0.15);
   overflow: hidden;
   background: #090b14;
 }
@@ -503,6 +527,10 @@ button.pixel-btn.recommended {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  background: linear-gradient(#14193a, #0e1228);
+  border: 2px solid var(--border);
+  padding: 4px 10px;
+  box-shadow: 0 3px 0 #060810;
 }
 
 .app-footer {
@@ -542,13 +570,15 @@ table.eval td {
 }
 
 table.eval th {
-  background: var(--panel2);
+  background: linear-gradient(var(--panel2), var(--panel));
   color: var(--accent);
+  text-shadow: 1px 1px 0 #000;
 }
 
 .lead {
   font-size: 9px;
-  color: var(--dim);
+  color: var(--ink);
+  opacity: 0.82;
 }
 
 /* compact HUD inside the flex shell */
@@ -567,14 +597,34 @@ a {
   text-shadow: 4px 4px 0 #090b14;
 }
 
+.leaderboard {
+  margin: 4px 0 0 0;
+  padding-left: 1.4em;
+  text-align: left;
+}
+
 .leaderboard li {
-  font-size: 9px;
-  margin-bottom: 4px;
+  font-size: 10px;
+  margin-bottom: 5px;
   color: var(--dim);
 }
 
 .leaderboard li b {
   color: var(--ink);
+}
+
+.leaderboard li.lb-current {
+  color: var(--accent);
+}
+
+.leaderboard li.lb-current b {
+  color: var(--accent);
+}
+
+/* stats panel scrollable if content overflows viewport */
+.stats-panel {
+  max-height: 88vh;
+  overflow-y: auto;
 }
 
 input.pixel-input {
@@ -593,7 +643,8 @@ input.pixel-input {
 
 /* hide the CRT scanlines behind the start flow screens */
 .game-stage:has(.start-bg)::after,
-.game-stage:has(.charsel-bg)::after {
+.game-stage:has(.charsel-bg)::after,
+.game-stage:has(.battle-screen)::after {
   display: none;
 }
 
@@ -748,13 +799,28 @@ input.pixel-input {
   cursor: default;
 }
 
-/* character select — dark panel like the mockup */
+/* character select — campus background with overlay (same world as title) */
 .charsel-bg {
   position: absolute;
   inset: 0;
-  background: #272727;
+  background: url("/ui/main_bg.png") center / cover no-repeat;
+  image-rendering: pixelated;
   overflow: auto;
   padding: 24px;
+}
+
+.charsel-bg::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(8, 10, 24, 0.72);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.charsel-bg > * {
+  position: relative;
+  z-index: 1;
 }
 
 .back-arrow {
@@ -778,10 +844,10 @@ input.pixel-input {
 
 .charsel-title {
   text-align: center;
-  color: #f4f4f4;
+  color: var(--accent);
   font-size: clamp(13px, 2.4vw, 20px);
   margin-top: 14px;
-  text-shadow: 2px 2px 0 #000;
+  text-shadow: 2px 2px 0 #000, 0 0 18px rgba(255, 213, 79, 0.3);
 }
 
 .charsel-row {
@@ -792,23 +858,28 @@ input.pixel-input {
 }
 
 .char-card {
-  background: none;
-  border: 3px solid transparent;
+  background: rgba(28, 34, 64, 0.72);
+  border: 3px solid var(--border);
   border-radius: 8px;
   padding: 14px 22px;
   cursor: pointer;
   font-family: inherit;
-  color: #eee;
+  color: var(--ink);
+  box-shadow: 0 4px 0 #060810, inset 0 0 0 1px rgba(112,128,224,0.15);
+  backdrop-filter: blur(2px);
+  transition: border-color 80ms steps(2), box-shadow 80ms steps(2);
 }
 
 .char-card:hover {
-  border-color: #4a4a45;
-  background: rgba(255, 255, 255, 0.04);
+  border-color: var(--border-hi);
+  background: rgba(37, 45, 88, 0.82);
+  box-shadow: 0 4px 0 #060810, 0 0 14px rgba(112,128,224,0.2);
 }
 
 .char-card.selected {
-  border-color: #ffd54f;
-  background: rgba(255, 213, 79, 0.07);
+  border-color: var(--accent);
+  background: rgba(74, 61, 0, 0.55);
+  box-shadow: 0 4px 0 #1a1400, 0 0 20px rgba(255,213,79,0.25);
 }
 
 .char-portrait {
@@ -832,13 +903,14 @@ input.pixel-input {
 .char-name {
   margin-top: 16px;
   font-size: 15px;
-  color: #fff;
+  color: var(--accent);
+  text-shadow: 1px 1px 0 #000;
 }
 
 .char-blurb {
   margin-top: 8px;
   font-size: 9px;
-  color: #b9b9b9;
+  color: var(--dim);
 }
 
 .name-row {
@@ -851,20 +923,22 @@ input.pixel-input {
 
 .name-input {
   font-family: inherit;
-  font-size: 13px;
+  font-size: 14px;
   color: #fff;
-  background: transparent;
+  background: rgba(28, 34, 64, 0.7);
   border: none;
-  border-bottom: 3px solid #888;
-  padding: 6px 4px;
-  width: 200px;
+  border-bottom: 3px solid var(--border);
+  padding: 8px 6px;
+  width: 260px;
   text-align: center;
   outline: none;
-  caret-color: #ffd54f;
+  caret-color: var(--accent);
+  backdrop-filter: blur(2px);
 }
 
 .name-input:focus {
-  border-bottom-color: #ffd54f;
+  border-bottom-color: var(--accent);
+  box-shadow: 0 3px 0 rgba(255, 213, 79, 0.3);
 }
 
 /* ============ BATTLE ANIMATIONS ============ */
@@ -966,7 +1040,7 @@ input.pixel-input {
   position: absolute;
   inset: 0;
   z-index: 30;
-  background: #202024;
+  background: radial-gradient(ellipse at 50% 30%, #1a2050 0%, #0d1028 60%, #080c1c 100%);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -979,15 +1053,15 @@ input.pixel-input {
 .congrats-title {
   font-size: clamp(20px, 4vw, 38px);
   color: #f3c021;
-  text-shadow: 3px 3px 0 rgba(0, 0, 0, 0.55);
+  text-shadow: 3px 3px 0 rgba(0, 0, 0, 0.7), 0 0 30px rgba(243, 192, 33, 0.4);
   letter-spacing: 2px;
 }
 
 .congrats-saying {
   font-size: clamp(9px, 1.3vw, 12px);
-  color: #8d93a8;
+  color: var(--dim);
   letter-spacing: 1px;
-  line-height: 1.8;
+  line-height: 1.9;
   max-width: 720px;
 }
 
@@ -996,11 +1070,12 @@ input.pixel-input {
   image-rendering: pixelated;
   margin: 8px 0;
   animation: idle-bob 2.6s ease-in-out infinite;
+  filter: drop-shadow(0 0 16px rgba(255, 213, 79, 0.35));
 }
 
 .congrats-stats {
   font-size: clamp(11px, 1.6vw, 15px);
-  color: #e8eaf3;
+  color: var(--ink);
   line-height: 2;
 }
 
@@ -1010,6 +1085,7 @@ input.pixel-input {
 
 .congrats-val.gold {
   color: #f3c021;
+  text-shadow: 0 0 10px rgba(243, 192, 33, 0.4);
 }
 
 .congrats-next {
