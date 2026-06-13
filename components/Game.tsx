@@ -14,7 +14,7 @@ import IrisTransition from "./IrisTransition";
 import StartFlow, { type StartChoice } from "./StartFlow";
 import { preloadSprites, setHeroVariant } from "@/lib/sprites";
 import RewardEnding from "./RewardEnding";
-import { LeaderboardList, loadBoard, saveBoard, type LeaderEntry } from "./Leaderboard";
+import { LeaderboardList, loadBoard, saveBoard, dedupeByName, type LeaderEntry } from "./Leaderboard";
 import type { Config, EncounterSet, GameMode, Question } from "@/engine/types";
 import configJson from "@/data/config.json";
 import questionsJson from "@/data/questions.json";
@@ -308,7 +308,7 @@ export default function GameRoot() {
     endSavedRef.current = true;
     recordPlay(game, choice.name, choice.hero);
     const entry: LeaderEntry = { name: choice.name, score: game.score, goal: game.map.goalName };
-    const b = [...board, entry].sort((a, z) => z.score - a.score).slice(0, 10);
+    const b = dedupeByName([...board, entry]).slice(0, 10);
     saveBoard(b);
     // schedule state update out of render to avoid React warning
     setTimeout(() => setBoard(b), 0);
@@ -323,7 +323,7 @@ export default function GameRoot() {
             <span className="title" style={{ fontSize: 14 }}>
               ACADÉMON AI
             </span>
-            <span className="subtitle" style={{ marginLeft: 10 }}>
+            <span className="subtitle hide-mobile" style={{ marginLeft: 10 }}>
               Gotta Pass &rsquo;Em All · {mode.toUpperCase()}
             </span>
           </div>
@@ -534,7 +534,7 @@ export default function GameRoot() {
         )}
       </div>
 
-      <div className="app-footer subtitle">
+      <div className="app-footer subtitle hide-mobile">
         {inGame ? (
           <>
             Orange = risk-aware route · dashed gray = naive shortest path · cyan flash = A* explored

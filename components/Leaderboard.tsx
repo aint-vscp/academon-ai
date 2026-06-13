@@ -19,7 +19,19 @@ export function loadBoard(): LeaderEntry[] {
 }
 
 export function saveBoard(b: LeaderEntry[]) {
-  localStorage.setItem("academon-board", JSON.stringify(b.slice(0, 10)));
+  const deduped = dedupeByName(b);
+  localStorage.setItem("academon-board", JSON.stringify(deduped.slice(0, 10)));
+}
+
+/** Collapse duplicate names, keeping each player's best score; sorted high→low. */
+export function dedupeByName(entries: LeaderEntry[]): LeaderEntry[] {
+  const best = new Map<string, LeaderEntry>();
+  for (const e of entries) {
+    const k = e.name.trim().toLowerCase();
+    const cur = best.get(k);
+    if (!cur || e.score > cur.score) best.set(k, e);
+  }
+  return [...best.values()].sort((a, b) => b.score - a.score);
 }
 
 /** Styled ranking rows: gold-highlighted #1 with crown, then ranked rows, then
@@ -33,10 +45,11 @@ export function LeaderboardList({
   currentName?: string;
   slots?: number;
 }) {
-  const ranked = [...entries].sort((a, b) => b.score - a.score);
+  const ranked = dedupeByName(entries);
+  const rowCount = Math.max(slots, ranked.length);
   return (
     <div className="lb-list">
-      {Array.from({ length: slots }).map((_, i) => {
+      {Array.from({ length: rowCount }).map((_, i) => {
         const e = ranked[i];
         const cls = ["lb-row"];
         if (!e) cls.push("lb-empty");

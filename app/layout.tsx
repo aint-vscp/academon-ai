@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Press_Start_2P } from "next/font/google";
 import "./globals.css";
 
@@ -12,6 +12,15 @@ export const metadata: Metadata = {
   title: "AcadéMon AI — Gotta Pass 'Em All",
   description:
     "A pixel-style academic adventure: an A* agent autopilots the hero, you fight or retreat. Group 2, Intro to AI.",
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  viewportFit: "cover",
+  themeColor: "#0d0f1a",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

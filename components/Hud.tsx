@@ -50,19 +50,19 @@ export default function Hud({ game }: { game: Game }) {
         <span className="chip">
           PLAN <b>{game.plan === "avoid" ? "AVOID" : "ENGAGE"}</b>
         </span>
-        <span className="chip">
+        <span className="chip chip-verbose">
           g <b>{ghf.g.toFixed(0)}</b> h <b>{ghf.h}</b> f <b>{ghf.f.toFixed(0)}</b>
         </span>
-        <span className="chip">
+        <span className="chip chip-verbose">
           acc p <b>{(game.p * 100).toFixed(0)}%</b>
         </span>
-        <span className="chip">
+        <span className="chip chip-verbose">
           ALGO <b>{game.algo.toUpperCase()}</b>
         </span>
         <span className="chip">
           GOAL <b>{game.map.goalName}</b>
         </span>
-        <span className="chip">
+        <span className="chip chip-verbose">
           fights <b>{game.fights}</b> · retreats <b>{game.retreats}</b> · replans <b>{game.replans}</b>
         </span>
       </div>

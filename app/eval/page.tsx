@@ -384,7 +384,7 @@ export default function EvalPage() {
           <div className="title" style={{ fontSize:12, marginBottom:6 }}>
             ACADÉMON&nbsp;AI vs FIXED-PATH &mdash; per-run comparison ({pairs.length} runs)
           </div>
-          <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(360px, 1fr))", gap:14, marginBottom:18 }}>
+          <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(min(360px, 100%), 1fr))", gap:14, marginBottom:18 }}>
             <div className="pixel-panel">
               <div className="hud-label" style={{ marginBottom:6 }}>EFFICIENCY — energy cost per run (lower is better)</div>
               <PairedLine pairs={pairs} get={r=>[r.aiEnergy, r.fxEnergy]} yLabel="energy (EP)" xLabel="run #" yMax={maxEnergy}/>
@@ -469,7 +469,7 @@ export default function EvalPage() {
           </a>
         </div>
       ) : (
-        <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(380px, 1fr))", gap:14 }}>
+        <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(min(380px, 100%), 1fr))", gap:14 }}>
           <div className="pixel-panel">
             <div className="hud-label" style={{ marginBottom:6 }}>STEPS vs SCORE — optimization frontier</div>
             <ScatterChart plays={plays}/>
@@ -531,7 +531,7 @@ export default function EvalPage() {
       <div className="title" style={{ fontSize:12, marginTop:26 }}>
         CONSTRAINTS &amp; OBJECTIVE (what the AI optimizes)
       </div>
-      <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(300px, 1fr))", gap:14, marginTop:10 }}>
+      <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(min(300px, 100%), 1fr))", gap:14, marginTop:10 }}>
         <div className="pixel-panel">
           <div className="hud-label">RESOURCE BUDGETS (hard constraints)</div>
           <ul style={{ paddingLeft:"1.4em", marginTop:8 }}>
