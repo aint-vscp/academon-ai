@@ -1,4 +1,4 @@
-import { redis, storeConfigured } from "@/lib/redis";
+import { redis, storeConfigured, rateLimit, clientIp } from "@/lib/redis";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -16,7 +16,8 @@ function cleanName(raw: unknown): string {
 function cleanScore(raw: unknown): number {
   const n = Math.round(Number(raw));
   if (!Number.isFinite(n)) return NaN;
-  return Math.max(0, Math.min(10_000_000, n));
+  // game scores top out well under 10k; cap generously to block absurd injections
+  return Math.max(0, Math.min(100_000, n));
 }
 
 /** Top scores, one row per name (best score) — globally shared. */
@@ -37,6 +38,9 @@ export async function GET() {
 /** Submit a score; ZADD GT keeps each player's best (member = name → deduped). */
 export async function POST(req: Request) {
   if (!storeConfigured) return Response.json({ global: false, ok: false });
+  if (!(await rateLimit(clientIp(req)))) {
+    return Response.json({ ok: false, error: "rate_limited" }, { status: 429 });
+  }
   try {
     const body = await req.json();
     const name = cleanName(body?.name);

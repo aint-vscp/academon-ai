@@ -6,3 +6,9 @@ next-env.d.ts
 eval-results.json
 eval-results.csv
 .DS_Store
+
+# local env / secrets — NEVER commit
+.env
+.env.local
+.env*.local
+.vercel

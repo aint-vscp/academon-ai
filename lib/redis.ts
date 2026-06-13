@@ -30,3 +30,23 @@ export async function redis<T = unknown>(cmd: Cmd): Promise<T> {
   const json = (await res.json()) as { result: T };
   return json.result;
 }
+
+/** Best-effort fixed-window rate limit per client (fails OPEN on store errors so
+ *  real players are never blocked by a transient hiccup). */
+export async function rateLimit(ip: string, limit = 40, windowSec = 60): Promise<boolean> {
+  if (!storeConfigured) return true;
+  try {
+    const key = `academon:rl:${ip}`;
+    const n = await redis<number>(["INCR", key]);
+    if (n === 1) await redis(["EXPIRE", key, windowSec]);
+    return n <= limit;
+  } catch {
+    return true;
+  }
+}
+
+/** Client IP from the proxy headers (Vercel sets x-forwarded-for). */
+export function clientIp(req: Request): string {
+  const fwd = req.headers.get("x-forwarded-for");
+  return (fwd ? fwd.split(",")[0] : req.headers.get("x-real-ip"))?.trim() || "unknown";
+}

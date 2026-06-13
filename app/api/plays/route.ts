@@ -1,4 +1,4 @@
-import { redis, storeConfigured } from "@/lib/redis";
+import { redis, storeConfigured, rateLimit, clientIp } from "@/lib/redis";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -31,7 +31,7 @@ function sanitizePlay(body: Record<string, unknown>) {
     mode: body.mode === "exhibit" ? "exhibit" : "class",
     seed: num(body.seed, 0, 0xffffffff),
     steps: num(body.steps, 0, 100000),
-    score: num(body.score, 0, 10_000_000),
+    score: num(body.score, 0, 100_000),
     won: Boolean(body.won),
     failReason: body.failReason == null ? null : str(body.failReason, 40),
     correct: num(body.correct, 0, 100000),
@@ -70,6 +70,9 @@ export async function GET() {
 
 export async function POST(req: Request) {
   if (!storeConfigured) return Response.json({ global: false, ok: false });
+  if (!(await rateLimit(clientIp(req)))) {
+    return Response.json({ ok: false, error: "rate_limited" }, { status: 429 });
+  }
   try {
     const body = await req.json();
     if (!body || typeof body !== "object") {
