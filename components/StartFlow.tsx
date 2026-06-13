@@ -7,7 +7,7 @@
 import { useEffect, useState } from "react";
 import type { GameMode } from "@/engine/types";
 import { heroPortraitSrc, type HeroVariant } from "@/lib/sprites";
-import { LeaderboardList, loadBoard } from "./Leaderboard";
+import { LeaderboardList, fetchGlobalBoard, type LeaderEntry } from "./Leaderboard";
 
 export interface StartChoice {
   hero: HeroVariant;
@@ -32,6 +32,9 @@ export default function StartFlow({
   const [step, setStep] = useState<Step>("title");
   const [hero, setHero] = useState<HeroVariant | null>(null);
   const [name, setName] = useState("");
+  const [lbEntries, setLbEntries] = useState<LeaderEntry[]>([]);
+  const [lbLoading, setLbLoading] = useState(false);
+  const [lbGlobal, setLbGlobal] = useState(false);
 
   // dev/booth deep-link: ?screen=character|options|name (set after mount — no SSR mismatch)
   useEffect(() => {
@@ -41,6 +44,17 @@ export default function StartFlow({
       setStep(s as Step);
     }
   }, []);
+
+  // load the (global) leaderboard whenever its screen opens
+  useEffect(() => {
+    if (step !== "leaderboard") return;
+    setLbLoading(true);
+    fetchGlobalBoard().then(({ entries, global }) => {
+      setLbEntries(entries);
+      setLbGlobal(global);
+      setLbLoading(false);
+    });
+  }, [step]);
 
   // ---------- title ----------
   if (step === "title") {
@@ -78,7 +92,6 @@ export default function StartFlow({
 
   // ---------- leaderboard ----------
   if (step === "leaderboard") {
-    const board = loadBoard();
     return (
       <div className="charsel-bg">
         <button className="back-arrow" onClick={() => setStep("title")} aria-label="Back">
@@ -86,9 +99,19 @@ export default function StartFlow({
         </button>
         <div className="charsel-title lb-screen-title">LEADERBOARD</div>
         <div className="lb-wrap">
-          <LeaderboardList entries={board} slots={5} />
-          {board.length === 0 && (
-            <p className="subtitle lb-hint">No scores yet — finish a run to claim the crown!</p>
+          {lbLoading ? (
+            <p className="subtitle lb-hint">Loading…</p>
+          ) : (
+            <>
+              <LeaderboardList entries={lbEntries} slots={5} />
+              <p className="subtitle lb-hint">
+                {lbEntries.length === 0
+                  ? "No scores yet — finish a run to claim the crown!"
+                  : lbGlobal
+                    ? "🌐 Global ranking — shared by everyone who plays."
+                    : "Saved on this device. (Global sync activates once a KV store is connected.)"}
+              </p>
+            </>
           )}
         </div>
       </div>

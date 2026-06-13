@@ -38,7 +38,7 @@ export default function Hud({ game }: { game: Game }) {
             Time {min}:{sec.toString().padStart(2, "0")}
           </div>
           <div className="bar time">
-            <i style={{ width: `${(game.timeLeft / cfg.modes[game.mode].time_limit) * 100}%` }} />
+            <i style={{ width: `${Math.max(0, Math.min(100, (game.timeLeft / cfg.modes[game.mode].time_limit) * 100))}%` }} />
           </div>
         </div>
       </div>

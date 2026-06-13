@@ -94,17 +94,35 @@ EP/agent parameters, mapgen contract bounds, scoring. Balance target: a
   **🔊 volume toggle** (top-right / in the in-game header). Drop-in audio lives in
   `public/audio/`.
 
+## Global leaderboard & Eval Lab sync
+
+The leaderboard **and** the Eval Lab play-records sync **globally across all
+players** when a key-value store is connected; otherwise they fall back to
+per-device `localStorage` (the game never breaks either way).
+
+Enable global sync (free, ~2 min):
+
+1. In your Vercel project → **Storage** → **Create Database** → **Upstash for
+   Redis** (or **KV**) → connect it to the project. This auto-injects
+   `KV_REST_API_URL` and `KV_REST_API_TOKEN` (also accepts
+   `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN`).
+2. **Redeploy.** Done — every device now shares one leaderboard (best score per
+   name) and one merged Eval Lab dataset.
+
+Implemented by the `/api/leaderboard` and `/api/plays` route handlers
+(`app/api/**`) over the Upstash REST protocol; the client (`components/Leaderboard.tsx`,
+`lib/plays.ts`) fetches global with a local cache/fallback. Submitted data is
+sanitized and capped server-side.
+
 ## Deploy on Vercel
 
-This is a standard static Next.js 15 app — zero config needed:
+This is a standard Next.js 15 app — zero config to get running:
 
 1. Push to GitHub (already done).
 2. On [vercel.com](https://vercel.com) → **Add New → Project** → import this repo.
-3. Framework preset **Next.js** is auto-detected; build `npm run build`, output handled
-   automatically. Click **Deploy**.
-
-No environment variables or backend required — all state is client-side
-(`localStorage`).
+3. Framework preset **Next.js** is auto-detected; click **Deploy**.
+4. (Optional) Add a KV/Upstash store for the global leaderboard + Eval Lab sync
+   (see above). Without it, those stay per-device — everything else works.
 
 ---
 

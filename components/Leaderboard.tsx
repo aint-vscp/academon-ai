@@ -20,7 +20,40 @@ export function loadBoard(): LeaderEntry[] {
 
 export function saveBoard(b: LeaderEntry[]) {
   const deduped = dedupeByName(b);
-  localStorage.setItem("academon-board", JSON.stringify(deduped.slice(0, 10)));
+  try {
+    localStorage.setItem("academon-board", JSON.stringify(deduped.slice(0, 10)));
+  } catch {}
+}
+
+/** Global leaderboard (shared across all players) with a localStorage fallback. */
+export async function fetchGlobalBoard(): Promise<{ entries: LeaderEntry[]; global: boolean }> {
+  try {
+    const r = await fetch("/api/leaderboard", { cache: "no-store" });
+    if (r.ok) {
+      const j = (await r.json()) as { global?: boolean; entries?: { name: unknown; score: unknown }[] };
+      if (j.global && Array.isArray(j.entries)) {
+        const entries = j.entries.map((e) => ({
+          name: String(e.name ?? ""),
+          score: Number(e.score) || 0,
+          goal: "",
+        }));
+        return { entries, global: true };
+      }
+    }
+  } catch {}
+  return { entries: loadBoard(), global: false };
+}
+
+/** Submit a score to the global board (and keep a local cache as a fallback). */
+export async function submitScore(name: string, score: number) {
+  saveBoard(dedupeByName([...loadBoard(), { name, score, goal: "" }]));
+  try {
+    await fetch("/api/leaderboard", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, score }),
+    });
+  } catch {}
 }
 
 /** Collapse duplicate names, keeping each player's best score; sorted high→low. */

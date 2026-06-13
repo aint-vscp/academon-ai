@@ -1,10 +1,11 @@
 "use client";
 
-// Evaluation Lab: real play data from every user session on this device.
-// No simulations — every chart point is an actual game run by a real player.
+// Evaluation Lab: real play data — global across all players when a KV store is
+// configured, else this device. Every AcadéMon point is an actual game run.
 
 import { useEffect, useState } from "react";
 import type { PlayRecord } from "@/components/Game";
+import { fetchGlobalPlays, clearLocalData } from "@/lib/plays";
 import { generateMap, quadrantOf } from "@/engine/mapgen";
 import { search, type CostContext } from "@/engine/search";
 import { mulberry32 } from "@/engine/rng";
@@ -57,17 +58,6 @@ function buildPairs(plays: PlayRecord[]): PairRow[] {
       fxGoal, fxEnergy, fxHp, fxTime,
     };
   });
-}
-
-function loadPlays(): PlayRecord[] {
-  if (typeof window === "undefined") return [];
-  try { return JSON.parse(localStorage.getItem("academon-plays") ?? "[]"); }
-  catch { return []; }
-}
-
-function clearPlays() {
-  localStorage.removeItem("academon-plays");
-  localStorage.removeItem("academon-board");
 }
 
 const optimalCache = new Map<number, number>();
@@ -332,13 +322,25 @@ function ReliabilityBar({ pairs }: { pairs: PairRow[] }) {
 export default function EvalPage() {
   const [plays, setPlays] = useState<PlayRecord[]>([]);
   const [loaded, setLoaded] = useState(false);
+  const [global, setGlobal] = useState(false);
 
-  useEffect(() => { setPlays(loadPlays()); setLoaded(true); }, []);
+  useEffect(() => {
+    fetchGlobalPlays().then(({ plays, global }) => {
+      setPlays(plays);
+      setGlobal(global);
+      setLoaded(true);
+    });
+  }, []);
 
-  const refresh = () => setPlays(loadPlays());
+  const refresh = () =>
+    fetchGlobalPlays().then(({ plays, global }) => {
+      setPlays(plays);
+      setGlobal(global);
+    });
   const clearAll = () => {
-    if (confirm("Clear all recorded play data and leaderboard? This cannot be undone.")) {
-      clearPlays(); setPlays([]);
+    if (confirm("Clear this device's local cache? The global ranking is shared and stays intact.")) {
+      clearLocalData();
+      refresh();
     }
   };
 
@@ -356,16 +358,19 @@ export default function EvalPage() {
     <div className="wrap">
       <div className="title" style={{ fontSize:16 }}>EVAL LAB &mdash; EXHIBITION</div>
       <p className="lead">
-        Real play data from every AcadéMon AI session on this device, merged into the charts below.
-        Each AcadéMon point is an actual run; the Fixed-Path baseline is a simulated naive agent
-        (one rigid shortest-tile route, no risk-awareness) shown for comparison. Play a game, come
-        back, click Refresh.
+        Real play data from <b>{global ? "every player, merged globally" : "this device"}</b>,
+        charted below. Each AcadéMon point is an actual run; the Fixed-Path baseline is a simulated
+        naive agent (one rigid shortest-tile route, no risk-awareness) shown for comparison. Play a
+        game, come back, click Refresh.
       </p>
 
       <div style={{ display:"flex", gap:10, alignItems:"center", flexWrap:"wrap", margin:"10px 0 18px" }}>
         <button className="pixel-btn primary" onClick={refresh}>↻ Refresh</button>
         <a href="/" className="chip" style={{ textDecoration:"none" }}>← back to game</a>
-        <span className="chip">{plays.length} session{plays.length!==1?"s":""} recorded</span>
+        <span className="chip" style={{ color: global ? GREEN : GRAY }}>
+          {global ? "🌐 Global" : "This device"}
+        </span>
+        <span className="chip">{plays.length} run{plays.length!==1?"s":""}</span>
         {plays.length>0 && <>
           <span className="chip">{wins}/{plays.length} wins ({Math.round(wins/plays.length*100)}%)</span>
           <span className="chip">avg score {avgScore}</span>
@@ -373,7 +378,7 @@ export default function EvalPage() {
         </>}
         {plays.length>0 && (
           <button className="pixel-btn" style={{ marginLeft:"auto", color:RED }} onClick={clearAll}>
-            ✕ Clear data
+            ✕ Clear local
           </button>
         )}
       </div>

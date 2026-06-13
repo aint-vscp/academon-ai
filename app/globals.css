@@ -143,6 +143,9 @@ button.pixel-btn.recommended {
 .bar.time > i {
   background: linear-gradient(#64d8fa, #0288d1);
   box-shadow: inset 0 1px 0 #a8eeff;
+  /* time changes continuously every frame — track it exactly (no stepped
+     transition, which makes the tiny per-frame deltas look frozen). */
+  transition: none;
 }
 
 .hud-grid {

@@ -16,7 +16,8 @@ import { preloadSprites, setHeroVariant } from "@/lib/sprites";
 import { initAudio, playMusic, playSfx, type MusicName } from "@/lib/audio";
 import RewardEnding from "./RewardEnding";
 import VolumeToggle from "./VolumeToggle";
-import { LeaderboardList, loadBoard, saveBoard, dedupeByName, type LeaderEntry } from "./Leaderboard";
+import { LeaderboardList, fetchGlobalBoard, submitScore, type LeaderEntry } from "./Leaderboard";
+import { submitPlay } from "@/lib/plays";
 import type { Config, EncounterSet, GameMode, Question } from "@/engine/types";
 import configJson from "@/data/config.json";
 import questionsJson from "@/data/questions.json";
@@ -76,33 +77,29 @@ interface TransSpec {
   mid: () => void;
 }
 
-function recordPlay(game: Game, name: string, hero: "isko" | "iska") {
-  try {
-    const plays: PlayRecord[] = JSON.parse(localStorage.getItem("academon-plays") ?? "[]");
-    plays.push({
-      id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-      ts: Date.now(),
-      name,
-      hero,
-      mode: game.mode,
-      seed: game.seed,
-      steps: game.steps,
-      score: game.score,
-      won: game.phase === "won",
-      failReason: game.failReason,
-      correct: game.correct,
-      answered: game.answered,
-      fights: game.fights,
-      retreats: game.retreats,
-      replans: game.replans,
-      elapsed: game.elapsed,
-      roundsCleared: game.roundsCleared,
-      finalHp: Math.max(0, Math.round(game.hp)),
-      finalEnergy: Math.max(0, Math.round(game.energy)),
-      energyCost: Math.round(game.energySpent),
-    });
-    localStorage.setItem("academon-plays", JSON.stringify(plays.slice(-100)));
-  } catch {}
+function buildPlayRecord(game: Game, name: string, hero: "isko" | "iska"): PlayRecord {
+  return {
+    id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+    ts: Date.now(),
+    name,
+    hero,
+    mode: game.mode,
+    seed: game.seed,
+    steps: game.steps,
+    score: game.score,
+    won: game.phase === "won",
+    failReason: game.failReason,
+    correct: game.correct,
+    answered: game.answered,
+    fights: game.fights,
+    retreats: game.retreats,
+    replans: game.replans,
+    elapsed: game.elapsed,
+    roundsCleared: game.roundsCleared,
+    finalHp: Math.max(0, Math.round(game.hp)),
+    finalEnergy: Math.max(0, Math.round(game.energy)),
+    energyCost: Math.round(game.energySpent),
+  };
 }
 
 function nextSeed(mode: GameMode): number {
@@ -198,7 +195,7 @@ export default function GameRoot() {
     const q = new URLSearchParams(window.location.search);
     const m: GameMode = q.get("mode") === "exhibit" ? "exhibit" : "class";
     if (m === "exhibit") setMode("exhibit");
-    setBoard(loadBoard());
+    fetchGlobalBoard().then(({ entries }) => setBoard(entries));
     preloadSprites();
     initAudio();
     // delegated UI click SFX: menu tablets vs in-game buttons
@@ -335,16 +332,18 @@ export default function GameRoot() {
     playMusic(musicKey);
   }, [musicKey]);
 
-  // Auto-save play record + leaderboard once per session when game ends
-  if (game && choice && !endSavedRef.current && (game.phase === "won" || game.phase === "lost")) {
+  // Submit play record + score globally once per session when the game ends
+  const endPhase =
+    game && (game.phase === "won" || game.phase === "lost") ? game.phase : null;
+  useEffect(() => {
+    const g = gameRef.current;
+    if (!endPhase || !g || !choice || endSavedRef.current) return;
     endSavedRef.current = true;
-    recordPlay(game, choice.name, choice.hero);
-    const entry: LeaderEntry = { name: choice.name, score: game.score, goal: game.map.goalName };
-    const b = dedupeByName([...board, entry]).slice(0, 10);
-    saveBoard(b);
-    // schedule state update out of render to avoid React warning
-    setTimeout(() => setBoard(b), 0);
-  }
+    submitPlay(buildPlayRecord(g, choice.name, choice.hero));
+    submitScore(choice.name, g.score)
+      .then(() => fetchGlobalBoard())
+      .then(({ entries }) => setBoard(entries));
+  }, [endPhase, choice]);
 
   return (
     <div className="app-shell">
