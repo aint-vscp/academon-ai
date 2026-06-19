@@ -56,9 +56,18 @@ function pauseOthers(except: MusicName) {
 
 function play(el: HTMLAudioElement) {
   // play() can reject if a gesture hasn't happened yet — that's fine, a later
-  // gesture / pageshow / visibility change retries.
+  // gesture / pageshow / visibility change / watchdog tick retries.
   const p = el.play();
-  if (p && typeof p.catch === "function") p.catch(() => {});
+  if (p && typeof p.catch === "function") {
+    p.catch(() => {
+      // If it failed because the media wasn't ready yet, retry once it can play.
+      const retry = () => {
+        el.removeEventListener("canplay", retry);
+        if (!muted && currentMusic && musicEls.get(currentMusic) === el) play(el);
+      };
+      el.addEventListener("canplay", retry);
+    });
+  }
 }
 
 function switchTo(name: MusicName) {
@@ -140,4 +149,21 @@ export function initAudio() {
   });
   window.addEventListener("pageshow", () => resume());
   window.addEventListener("focus", () => resume());
+
+  // Watchdog: the game AUTOPILOTS, so after the first click the player may never
+  // click again — yet music context switches (lobby→biome→battle) still happen.
+  // If any of those switches' play() was rejected/raced, nothing would retry it.
+  // This tick guarantees the desired track is actually audible once playback is
+  // unlocked, without needing a fresh user gesture. It's a no-op when already
+  // playing or muted, and harmless (caught) before the first gesture.
+  window.setInterval(() => {
+    if (muted) return;
+    const name = currentMusic ?? desiredMusic;
+    if (!name) return;
+    const el = musicEls.get(name);
+    if (el && el.paused && document.visibilityState === "visible") {
+      pauseOthers(name);
+      play(el);
+    }
+  }, 1500);
 }

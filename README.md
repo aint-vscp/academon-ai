@@ -124,6 +124,14 @@ This is a standard Next.js 15 app — zero config to get running:
 4. (Optional) Add a KV/Upstash store for the global leaderboard + Eval Lab sync
    (see above). Without it, those stay per-device — everything else works.
 
+## Documentation
+
+- **[`docs/TECHNICAL.md`](docs/TECHNICAL.md)** — architecture, the risk-cost A\*
+  decision pipeline, the EP resource economy, map generation, data model, and the API.
+- **[`docs/EVALUATION.md`](docs/EVALUATION.md)** — how the Evaluation Lab works: the
+  live exhibition dashboard (real plays vs simulated baseline) **and** the headless
+  `npm run eval` A/B experiment, with every chart and metric explained.
+
 ---
 
 Group 2 · Polytechnic University of the Philippines · Intro to AI
