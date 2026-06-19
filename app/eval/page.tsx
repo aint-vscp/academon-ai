@@ -338,7 +338,7 @@ export default function EvalPage() {
       setGlobal(global);
     });
   const clearAll = () => {
-    if (confirm("Clear this device's local cache? The global ranking is shared and stays intact.")) {
+    if (confirm("Clear ONLY this device's offline cache?\n\nThe shared global dataset (every player's runs) lives on the server and is NOT affected — Refresh re-loads it.")) {
       clearLocalData();
       refresh();
     }
@@ -376,9 +376,10 @@ export default function EvalPage() {
           <span className="chip">avg score {avgScore}</span>
           <span className="chip">avg steps {avgSteps}</span>
         </>}
-        {plays.length>0 && (
-          <button className="pixel-btn" style={{ marginLeft:"auto", color:RED }} onClick={clearAll}>
-            ✕ Clear local
+        {plays.length>0 && !global && (
+          <button className="pixel-btn" style={{ marginLeft:"auto", color:RED }} onClick={clearAll}
+                  title="Removes only this device's offline cache. The shared global dataset is stored on the server and is never affected.">
+            ✕ Clear this device cache
           </button>
         )}
       </div>
@@ -455,6 +456,8 @@ export default function EvalPage() {
               simulated with RANDBETWEEN — Energy 300–500, HP 20–50, Time 180–300 — seeded per run so
               they stay stable. Simulation lets us model a naive baseline before collecting a full
               real-world dataset, making the AI&rsquo;s optimization measurable side-by-side.
+              <br/><b>Note:</b> one row = one run. A name appearing more than once just means that
+              player completed several separate runs — each is its own data point, not a duplicate.
             </p>
           </div>
         </>
